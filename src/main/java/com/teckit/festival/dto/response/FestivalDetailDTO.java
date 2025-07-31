@@ -52,9 +52,10 @@ public class FestivalDetailDTO {
     private List<String> styurls;
 
 
-    public FestivalDetail toEntity(Festival festival) {
+    public FestivalDetail toEntity(Festival festival,int ticketPrice,int availableNOP) {
         return FestivalDetail.builder()
                 .festival(festival)
+                .availableNOP(availableNOP)
                 .fcltyid(mt10id)
                 .fname(prfnm)
                 .fdfrom(prfpdfrom)
@@ -68,7 +69,7 @@ public class FestivalDetailDTO {
                 .entrpsnmA(entrpsnmA)
                 .entrpsnmH(entrpsnmH)
                 .entrpsnmS(entrpsnmS)
-                .ticketPrice(pcseguidance)
+                .ticketPrice(ticketPrice)
                 .poster(poster)
                 .story(sty)
                 .genrenm(genrenm)
@@ -76,9 +77,6 @@ public class FestivalDetailDTO {
                 .openrun(openrun)
                 .visit(visit)
                 .child(child)
-                .isFestival(isFestival)
-                .musicallicense(musicallicense)
-                .musicalcreate(musicalcreate)
                 .updatedate(updatedate)
                 .styurls(styurls)
 //                여기서 이거 넣어주면 안되고,

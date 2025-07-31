@@ -59,7 +59,11 @@ public class FestivalService {
             if(detailResponse==null) continue;
 
             Festival festival=festivalDTO.toEntity();
-            FestivalDetail festivalDetail=detailResponse.toEntity(festival);
+
+            int ticketPrice=FestivalScheduleGenerator.generateRandomPrice();
+            int availableNOP=FestivalScheduleGenerator.generateRandomAvailableNOP();
+
+            FestivalDetail festivalDetail=detailResponse.toEntity(festival,ticketPrice,availableNOP);
             List<FestivalSchedule> festivalSchedules= FestivalScheduleGenerator.generateRandomSchedules(festivalDetail);
             festivalDetail.setSchedules(festivalSchedules);
 

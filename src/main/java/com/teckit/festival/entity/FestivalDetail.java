@@ -35,8 +35,8 @@ public class FestivalDetail {
     private String entrpsnmH;
     private String entrpsnmS;
 
-    @Column(length=500)
-    private String ticketPrice;
+    @Column(nullable = false)
+    private int ticketPrice;
 
     @Column(length = 1000)
     private String poster;
@@ -49,15 +49,9 @@ public class FestivalDetail {
     private String openrun;
     private String visit;
     private String child;
-    private String isFestival;
-
 //    수용 가능 인원
     private int availableNOP;
 
-//    ------
-    private String musicallicense;
-    private String musicalcreate;
-//    -------
     private String updatedate;
 
     @ElementCollection
