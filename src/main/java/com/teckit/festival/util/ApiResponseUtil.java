@@ -7,4 +7,8 @@ public class ApiResponseUtil {
     public static <T> ResponseEntity<SuccessResponse<T>> success(T data, String message) {
         return ResponseEntity.ok(new SuccessResponse<>(true, data, message));
     }
+
+    public static <T> ResponseEntity<SuccessResponse<T>> success(T data) {
+        return ResponseEntity.ok(new SuccessResponse<>(true, data, "요청이 성공적으로 처리되었습니다."));
+    }
 }

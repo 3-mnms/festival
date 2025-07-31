@@ -1,5 +1,6 @@
 package com.teckit.festival.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,5 +45,6 @@ public class Festival {
     private String fstate;
 
     @OneToOne(mappedBy = "festival",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonBackReference
     private FestivalDetail festivalDetail;
 }

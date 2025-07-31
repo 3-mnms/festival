@@ -1,5 +1,6 @@
 package com.teckit.festival.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,7 @@ public class FestivalDetail {
 
     @OneToOne
     @JoinColumn(name = "fid")
+    @JsonManagedReference
     private Festival festival;
 
     private String fcltyid;

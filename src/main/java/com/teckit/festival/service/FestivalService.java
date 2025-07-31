@@ -12,18 +12,15 @@ import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.repository.FestivalScheduleRepository;
 import com.teckit.festival.util.FestivalScheduleGenerator;
 import jakarta.transaction.Transactional;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Unmarshaller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 import static com.teckit.festival.util.XmlApiUtil.fetchAndParseXml;
 
@@ -37,10 +34,22 @@ public class FestivalService {
 
     private final RestClient restClient;
 
-
-
     @Value("${festival-api-key}")
     private String festivalApiKey;
+
+    public List<String> getCategories(){
+        return festivalDetailRepository.findDistinctGenrenm();
+    }
+
+
+    public Page<Festival> getFestivals(Pageable pageable) {
+        return festivalRepository.findAll(pageable);
+    }
+
+    public Optional<FestivalDetail> getFestivalDetail(String id){
+        return festivalDetailRepository.findByFestivalId(id);
+    }
+
 
     @Transactional
     public void fetchAndSaveFestivalListAndDetail() {
@@ -69,8 +78,6 @@ public class FestivalService {
 
             festivalRepository.save(festival);
             festivalDetailRepository.save(festivalDetail);
-
-
         }
     }
 
