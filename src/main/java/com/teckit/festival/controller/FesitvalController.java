@@ -13,10 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -46,5 +43,18 @@ public class FesitvalController {
                 .orElseThrow(()->new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
         return ApiResponseUtil.success(festivalDetail);
     }
+
+    @GetMapping("/views/{id}")
+    public ResponseEntity<SuccessResponse<Integer>> getViews(@PathVariable String id) {
+        int views=festivalService.getViews(id);
+        return ApiResponseUtil.success(views);
+    }
+
+    @PostMapping("/views/{id}")
+    public ResponseEntity<SuccessResponse<Integer>> increaseViews(@PathVariable String id) {
+        festivalService.increaseViews(id);
+        return ApiResponseUtil.success();
+    }
+
 
 }

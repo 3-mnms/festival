@@ -14,4 +14,6 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail,S
 
     @Query("SELECT f FROM FestivalDetail f WHERE f.festival.id = :fid")
     Optional<FestivalDetail> findByFestivalId(@Param("fid") String fid);
+
+
 }

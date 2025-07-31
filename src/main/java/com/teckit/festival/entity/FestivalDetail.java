@@ -56,6 +56,9 @@ public class FestivalDetail {
 
     private String updatedate;
 
+
+    private int views=0;
+
     @ElementCollection
     @CollectionTable(
             name = "festival_detail_styurls",

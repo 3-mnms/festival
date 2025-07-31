@@ -7,6 +7,8 @@ import com.teckit.festival.dto.response.FestivalListDTO;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalSchedule;
+import com.teckit.festival.exception.BusinessException;
+import com.teckit.festival.exception.ErrorCode;
 import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.repository.FestivalScheduleRepository;
@@ -48,6 +50,28 @@ public class FestivalService {
 
     public Optional<FestivalDetail> getFestivalDetail(String id){
         return festivalDetailRepository.findByFestivalId(id);
+    }
+
+    public int getViews(String id){
+        FestivalDetail festivalDetail = festivalDetailRepository.findByFestivalId(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+
+
+        return festivalDetail.getViews();
+
+    }
+
+
+
+    @Transactional
+    public int increaseViews(String id) {
+        FestivalDetail festivalDetail = festivalDetailRepository.findByFestivalId(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+
+        festivalDetail.setViews(festivalDetail.getViews() + 1); // 조회수 증가
+
+        // JPA @Transactional 이기 때문에 save() 호출 없이도 flush됨
+        return festivalDetail.getViews();
     }
 
 
