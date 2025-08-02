@@ -6,6 +6,9 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import lombok.Getter;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 @XmlAccessorType(XmlAccessType.FIELD)
 @Getter
 public class FestivalDTO {
@@ -32,16 +35,17 @@ public class FestivalDTO {
     private String prfstate;
 
     public Festival toEntity() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+
         return Festival.builder()
                 .id(mt20id)
                 .fname(prfnm)
-                .fdfrom(prfpdfrom)
-                .fdto(prfpdto)
+                .fdfrom(LocalDate.parse(prfpdfrom,formatter))
+                .fdto(LocalDate.parse(prfpdto,formatter))
                 .poster(poster)
                 .area(area)
                 .fcltynm(fcltynm)
                 .genrename(genrenm)
-                .openrun(openrun)
                 .fstate(prfstate)
                 .build();
     }

@@ -1,5 +1,6 @@
 package com.teckit.festival.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,7 @@ public class FestivalDetail {
 
     @OneToOne
     @JoinColumn(name = "fid")
+    @JsonManagedReference
     private Festival festival;
 
     private String fcltyid;
@@ -27,16 +29,12 @@ public class FestivalDetail {
     private String fdto;
     private String fcltynm;
     private String fcast;
-    private String fcrew;
-    private String fruntime;
-    private String fage;
-    private String entrpsnmP;
-    private String entrpsnmA;
-    private String entrpsnmH;
-    private String entrpsnmS;
 
-    @Column(length=500)
-    private String ticketPrice;
+    private String fage;
+
+
+    @Column(nullable = false)
+    private int ticketPrice;
 
     @Column(length = 1000)
     private String poster;
@@ -46,19 +44,17 @@ public class FestivalDetail {
 
     private String genrenm;
     private String fstate;
-    private String openrun;
+
+//
     private String visit;
-    private String child;
-    private String isFestival;
 
 //    수용 가능 인원
     private int availableNOP;
 
-//    ------
-    private String musicallicense;
-    private String musicalcreate;
-//    -------
     private String updatedate;
+
+
+    private int views=0;
 
     @ElementCollection
     @CollectionTable(
