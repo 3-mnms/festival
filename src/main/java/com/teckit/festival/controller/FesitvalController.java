@@ -23,6 +23,25 @@ import java.util.List;
 public class FesitvalController {
     private final FestivalService festivalService;
 
+//    가수, 제목, 장르별
+    @GetMapping("/search")
+    public ResponseEntity<SuccessResponse<List<?>>> searchFestivals(
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) String keyword
+    ) {
+        List<?> festivals=List.of();
+        if (genre != null && keyword != null) {
+            festivals = festivalService.searchByGenreAndKeyword(genre, keyword);
+        } else if (genre != null) {
+            festivals = festivalService.searchByGenre(genre);
+        } else if (keyword != null) {
+            festivals = festivalService.searchByKeyword(keyword);
+        }
+
+        return ApiResponseUtil.success(festivals);
+    }
+
+
     @GetMapping("/categories")
     public ResponseEntity<SuccessResponse<List<String>>> getCategories(){
         List<String> categories = festivalService.getCategories();

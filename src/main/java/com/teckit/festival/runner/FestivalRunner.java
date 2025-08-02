@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Component
 @RequiredArgsConstructor
 public class FestivalRunner implements CommandLineRunner {
@@ -13,6 +15,13 @@ public class FestivalRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        festivalService.fetchAndSaveFestivalListAndDetail();
+
+        int nowMonth = LocalDate.now().getMonthValue(); // 1~12
+        String stdate = String.format("2025%02d01", nowMonth);
+        String eddate = String.format("2025%02d31", nowMonth);
+
+        for(int i=nowMonth;i<=nowMonth+1;i++){
+            festivalService.fetchAndSaveFestivalListAndDetail(stdate,eddate);
+        }
     }
 }

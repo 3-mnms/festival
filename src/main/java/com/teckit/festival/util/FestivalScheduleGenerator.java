@@ -39,10 +39,10 @@ public class FestivalScheduleGenerator {
     }
 
     public static int generateRandomPrice(){
-        return random.nextInt(11)*10000;
+        return random.nextInt(1,11)*10000;
     }
 
     public static int generateRandomAvailableNOP(){
-        return random.nextInt(1,10)*100;
+        return random.nextInt(1,11)*100;
     }
 }

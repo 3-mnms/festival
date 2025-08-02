@@ -2,13 +2,13 @@ package com.teckit.festival.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.time.LocalDate;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,10 +22,10 @@ public class Festival {
     private String fname;
 
     @Column(nullable = false)
-    private String fdfrom;
+    private LocalDate fdfrom;
 
     @Column(nullable = false)
-    private String fdto;
+    private LocalDate fdto;
 
     @Column(nullable = false)
     private String poster;
@@ -37,8 +37,6 @@ public class Festival {
     private String area;
 
     private String genrename;
-
-    private String openrun;
 
 //    현재 날짜랑 비교해서 자동으로 바뀌게 ?
 //    schedule 설정

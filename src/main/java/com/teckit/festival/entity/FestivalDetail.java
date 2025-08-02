@@ -29,13 +29,9 @@ public class FestivalDetail {
     private String fdto;
     private String fcltynm;
     private String fcast;
-    private String fcrew;
-    private String fruntime;
+
     private String fage;
-    private String entrpsnmP;
-    private String entrpsnmA;
-    private String entrpsnmH;
-    private String entrpsnmS;
+
 
     @Column(nullable = false)
     private int ticketPrice;
@@ -48,9 +44,10 @@ public class FestivalDetail {
 
     private String genrenm;
     private String fstate;
-    private String openrun;
+
+//
     private String visit;
-    private String child;
+
 //    수용 가능 인원
     private int availableNOP;
 
