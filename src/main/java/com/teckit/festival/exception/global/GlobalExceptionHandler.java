@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import java.util.Objects;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,7 +21,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
         ErrorCode errorCode = e.getErrorCode();
-        ErrorResponse response = new ErrorResponse(false, errorCode.name(), errorCode.getMessage());
+        ErrorResponse response = ErrorResponse.builder()
+                .success(false)
+                .errorCode(errorCode.name())
+                .errorMessage(errorCode.getMessage())
+                .build();
         return new ResponseEntity<>(response, errorCode.getStatus());
     }
 
@@ -29,8 +34,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-        ErrorResponse response = new ErrorResponse(false, "VALIDATION_ERROR", message);
+        String message = Objects.requireNonNull(e.getBindingResult().getFieldError()).getDefaultMessage();
+        ErrorResponse response = ErrorResponse.builder()
+                .success(false)
+                .errorCode("VALIDATION_ERROR")
+                .errorMessage(message)
+                .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 

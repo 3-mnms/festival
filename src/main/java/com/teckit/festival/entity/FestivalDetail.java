@@ -1,11 +1,13 @@
 package com.teckit.festival.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import org.hibernate.annotations.DynamicInsert;
 import lombok.*;
 
 import java.util.List;
 
+@DynamicInsert
 @Entity
 @Table(name = "festival_detail")
 @Getter
@@ -14,13 +16,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FestivalDetail {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne
     @JoinColumn(name = "fid")
-    @JsonManagedReference
+    @JsonBackReference
     private Festival festival;
 
     private String fcltyid;
@@ -29,11 +32,7 @@ public class FestivalDetail {
     private String fdto;
     private String fcltynm;
     private String fcast;
-
     private String fage;
-
-
-    @Column(nullable = false)
     private int ticketPrice;
 
     @Column(length = 1000)
@@ -44,26 +43,20 @@ public class FestivalDetail {
 
     private String genrenm;
     private String fstate;
-
-//
     private String visit;
-
-//    수용 가능 인원
-    private int availableNOP;
-
+    @Column(name = "available_nop")
+    private Integer availableNop = 0;
     private String updatedate;
 
-
-    private int views=0;
+    // 조회수 (기본값 0)
+    @Builder.Default
+    private int views = 0;
 
     @ElementCollection
-    @CollectionTable(
-            name = "festival_detail_styurls",
-            joinColumns = @JoinColumn(name = "festival_detail_id") // ✅ 확실하게 FK 컬럼 생성
-    )
-    @Column(name="url")
+    @CollectionTable(name = "festival_detail_styurls", joinColumns = @JoinColumn(name = "festival_detail_id"))
+    @Column(name = "url")
     private List<String> styurls;
 
-    @OneToMany(mappedBy = "festivalDetail",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FestivalSchedule> schedules;
 }

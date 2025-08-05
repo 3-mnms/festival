@@ -9,7 +9,6 @@ import lombok.*;
 import java.util.List;
 
 @Data
-@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

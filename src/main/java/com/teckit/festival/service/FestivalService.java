@@ -13,6 +13,7 @@ import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.repository.FestivalScheduleRepository;
 import com.teckit.festival.util.FestivalScheduleGenerator;
+import com.teckit.festival.mapper.FestivalMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,128 +22,149 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
 import java.util.Optional;
-
 import static com.teckit.festival.util.XmlApiUtil.fetchAndParseXml;
 
 @Service
 @RequiredArgsConstructor
 public class FestivalService {
+
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository festivalDetailRepository;
     private final FestivalScheduleRepository festivalScheduleRepository;
-
-
+    private final FestivalMapper festivalMapper;
     private final RestClient restClient;
 
     @Value("${festival-api-key}")
     private String festivalApiKey;
 
+    @Transactional
+    public Festival createFestivalWithDetail(FestivalDTO dto) {
+        Festival festival = festivalMapper.toEntity(dto);
+        return festivalRepository.save(festival);
+    }
 
-    public List<Festival> searchByGenre(String genre) {
-        return festivalRepository.findByGenrename(genre);
+    @Transactional
+    public Festival updateFestival(String fid, FestivalDTO dto) {
+        Festival existingFestival = festivalRepository.findById(fid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        festivalMapper.updateEntityFromDto(dto, existingFestival);
+        return festivalRepository.save(existingFestival);
+    }
+
+    @Transactional
+    public void deleteFestivalByHost(String fid, Long hostId) {
+        Festival festival = festivalRepository.findById(fid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        if (!festival.getHid().equals(hostId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_HOST);
+        }
+        festivalRepository.delete(festival);
+    }
+
+    @Transactional
+    public void adminDeleteFestival(String fid) {
+        Festival festival = festivalRepository.findById(fid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        festivalRepository.delete(festival);
+    }
+
+    public List<Festival> getFestivalsByHost(Long hostId) {
+        return festivalRepository.findByHid(hostId);
+    }
+
+    public List<Festival> getAllFestivals() {
+        return festivalRepository.findAll();
+    }
+
+    public Optional<FestivalDetail> getFestivalDetail(String fid) {
+        return festivalDetailRepository.findByFestivalId(fid);
+    }
+
+    public List<String> getCategories() {
+        return festivalDetailRepository.findDistinctGenrenm();
+    }
+
+    public Page<Festival> getFestivals(Pageable pageable) {
+        return festivalRepository.findAll(pageable);
     }
 
     public List<Festival> searchByKeyword(String keyword) {
         return festivalRepository.findByFnameContaining(keyword);
     }
 
+    public List<Festival> searchByGenre(String genre) {
+        return festivalRepository.findByGenrename(genre);
+    }
+
     public List<Festival> searchByGenreAndKeyword(String genre, String keyword) {
         return festivalRepository.findByGenrenameAndFnameContaining(genre, keyword);
     }
-
-    public List<String> getCategories(){
-        return festivalDetailRepository.findDistinctGenrenm();
-    }
-
-
-    public Page<Festival> getFestivals(Pageable pageable) {
-        return festivalRepository.findAll(pageable);
-    }
-
-    public Optional<FestivalDetail> getFestivalDetail(String id){
-        return festivalDetailRepository.findByFestivalId(id);
-    }
-
-    public int getViews(String id){
-        FestivalDetail festivalDetail = getDetail(id);
-
-        return festivalDetail.getViews();
-    }
-
 
     @Transactional
     public void changeFstate() {
         List<Festival> festivals = festivalRepository.findAll();
         LocalDate today = LocalDate.now();
-
         for (Festival festival : festivals) {
-            String newState;
-
-            if (today.isBefore(festival.getFdfrom())) {
-                newState = "공연예정";
-            } else if (!today.isAfter(festival.getFdto())) {
-                newState = "공연중";
-            } else {
-                newState = "공연완료";
-            }
-
+            String newState = computeFstate(today, festival);
             if (!newState.equals(festival.getFstate())) {
-                festival.setFstate(newState); // setter가 있어야 함
+                festival.setFstate(newState);
             }
         }
     }
 
-
-    @Transactional
-    public void increaseViews(String id) {
-        FestivalDetail festivalDetail = getDetail(id);
-
-        festivalDetail.setViews(festivalDetail.getViews() + 1); // 조회수 증가
-        // JPA @Transactional 이기 때문에 save() 호출 없이도 flush됨
+    private String computeFstate(LocalDate today, Festival festival) {
+        if (today.isBefore(festival.getFdfrom())) return "공연예정";
+        if (!today.isAfter(festival.getFdto())) return "공연중";
+        return "공연완료";
     }
 
+    @Transactional
+    public void increaseViews(String fid) {
+        FestivalDetail festivalDetail = getDetail(fid);
+        festivalDetail.setViews(festivalDetail.getViews() + 1);
+    }
+
+    public int getViews(String fid) {
+        FestivalDetail detail = festivalDetailRepository.findByFestivalId(fid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        return detail.getViews();
+    }
+
+    private FestivalDetail getDetail(String fid) {
+        return festivalDetailRepository.findByFestivalId(fid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+    }
 
     @Transactional
-    public void fetchAndSaveFestivalListAndDetail(String stdate,String eddate) {
-
-        List<FestivalDTO> dtoList = fetchFestival(stdate,eddate);
-
-//        todo : 불필요한 연산 과정 줄이기
+    public void fetchAndSaveFestivalListAndDetail(String stdate, String eddate) {
+        List<FestivalDTO> dtoList = fetchFestival(stdate, eddate);
         for (FestivalDTO festivalDTO : dtoList) {
             boolean exists = festivalRepository.existsById(festivalDTO.getMt20id());
+            if (exists) continue;
 
-            if(exists) continue;
+            FestivalDetailDTO detailResponse = fetchFestivalDetail(festivalDTO.getMt20id());
+            if (detailResponse == null) continue;
 
-            FestivalDetailDTO detailResponse=fetchFestivalDetail(festivalDTO.getMt20id());
+            Festival festival = festivalDTO.toEntity();
+            int ticketPrice = FestivalScheduleGenerator.generateRandomPrice();
+            int availableNop = FestivalScheduleGenerator.generateRandomAvailableNop();
 
-            if(detailResponse==null) continue;
-
-            Festival festival=festivalDTO.toEntity();
-
-            int ticketPrice=FestivalScheduleGenerator.generateRandomPrice();
-            int availableNOP=FestivalScheduleGenerator.generateRandomAvailableNOP();
-
-            FestivalDetail festivalDetail=detailResponse.toEntity(festival,ticketPrice,availableNOP);
-            List<FestivalSchedule> festivalSchedules= FestivalScheduleGenerator.generateRandomSchedules(festivalDetail);
+            FestivalDetail festivalDetail = detailResponse.toEntity(festival, ticketPrice, availableNop);
+            List<FestivalSchedule> festivalSchedules = FestivalScheduleGenerator.generateRandomSchedules(festivalDetail);
             festivalDetail.setSchedules(festivalSchedules);
+
+            festival.setFestivalDetail(festivalDetail);  // 양방향 매핑 연결
 
             festivalRepository.save(festival);
             festivalDetailRepository.save(festivalDetail);
         }
     }
-    private FestivalDetail getDetail(String id) {
-        return festivalDetailRepository.findByFestivalId(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
-    }
 
-    public List<FestivalDTO> fetchFestival(String stdate,String eddate){
-
-        String uri = UriComponentsBuilder.fromPath("")
+    public List<FestivalDTO> fetchFestival(String stdate, String eddate) {
+        String uri = UriComponentsBuilder.fromPath("/")
                 .queryParam("service", festivalApiKey)
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
@@ -151,20 +173,37 @@ public class FestivalService {
                 .queryParam("afterdate", "20250601")
                 .build()
                 .toUriString();
-
-        FestivalListDTO response = fetchAndParseXml(restClient,uri, FestivalListDTO.class);
-
+        FestivalListDTO response = fetchAndParseXml(restClient, uri, FestivalListDTO.class);
         return response.getFestivalList();
     }
 
-
-    public FestivalDetailDTO fetchFestivalDetail(String id){
-        String uri = UriComponentsBuilder.fromPath("/" + id)
+    public FestivalDetailDTO fetchFestivalDetail(String fid) {
+        String uri = UriComponentsBuilder.fromPath("/" + fid)
                 .queryParam("service", festivalApiKey)
                 .build()
                 .toUriString();
+        FestivalDetailListDTO response = fetchAndParseXml(restClient, uri, FestivalDetailListDTO.class);
+        List<FestivalDetailDTO> list = response.getFestivalDetailList();
+        if (list == null || list.isEmpty()) return null;
+        return list.get(0);
+    }
 
-        FestivalDetailListDTO response = fetchAndParseXml(restClient,uri, FestivalDetailListDTO.class);
-        return response.getFestivalDetailList().get(0);
+    @RequiredArgsConstructor
+    @Service
+    public class FestivalService {
+
+        private final FestivalRepository festivalRepository;
+        private final FestivalProducer festivalProducer;  // 추가
+
+        @Transactional
+        public Festival createFestivalWithDetail(FestivalDTO dto) {
+            Festival festival = festivalMapper.toEntity(dto);
+            Festival saved = festivalRepository.save(festival);
+
+            // Kafka 메시지 보내기
+            festivalProducer.send("festival-topic", "New Festival Created: " + saved.getFname());
+
+            return saved;
+        }
     }
 }

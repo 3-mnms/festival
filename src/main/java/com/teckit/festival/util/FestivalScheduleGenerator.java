@@ -42,7 +42,7 @@ public class FestivalScheduleGenerator {
         return random.nextInt(1,11)*10000;
     }
 
-    public static int generateRandomAvailableNOP(){
+    public static int generateRandomAvailableNop(){
         return random.nextInt(1,11)*100;
     }
 }

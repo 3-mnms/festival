@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
 
-    FESTIVAL_NOT_FOUND("F001","입력 ID에 해당하는 페스티벌을 찾을 수 없습니다.",HttpStatus.NOT_FOUND);
-
+    FESTIVAL_NOT_FOUND("F001", "입력 ID에 해당하는 페스티벌을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    UNAUTHORIZED_HOST("F002", "호스트 권한이 없습니다.", HttpStatus.FORBIDDEN);
 
     private final String code;        // A001, A002 등
     private final String message;     // 사용자에게 보여줄 메시지
