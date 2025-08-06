@@ -10,14 +10,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="festival_schedule")
+@Table(name = "festival_schedule")
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class FestivalSchedule {
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -30,4 +31,7 @@ public class FestivalSchedule {
 
     private String time;
 
+    public void setFestivalDetail(FestivalDetail detail) {
+        this.festivalDetail = detail;
+    }
 }

@@ -14,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FestivalDetail {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,9 +30,7 @@ public class FestivalDetail {
     private String fdto;
     private String fcltynm;
     private String fcast;
-
     private String fage;
-
 
     @Column(nullable = false)
     private int ticketPrice;
@@ -44,26 +43,22 @@ public class FestivalDetail {
 
     private String genrenm;
     private String fstate;
-
-//
     private String visit;
-
-//    수용 가능 인원
     private int availableNOP;
-
     private String updatedate;
 
-
-    private int views=0;
+    @Builder.Default
+    private int views = 0;
 
     @ElementCollection
     @CollectionTable(
             name = "festival_detail_styurls",
-            joinColumns = @JoinColumn(name = "festival_detail_id") // ✅ 확실하게 FK 컬럼 생성
+            joinColumns = @JoinColumn(name = "festival_detail_id")
     )
-    @Column(name="url")
+    @Column(name = "url")
     private List<String> styurls;
 
-    @OneToMany(mappedBy = "festivalDetail",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<FestivalSchedule> schedules;
 }

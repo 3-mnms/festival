@@ -12,11 +12,14 @@ import java.time.LocalDate;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-
 public class Festival {
+
     @Id
     @Column(unique = true)
     private String id;
+
+    @Column(nullable = true)
+    private Long hid;
 
     @Column(nullable = false)
     private String fname;
@@ -36,13 +39,11 @@ public class Festival {
     @Column(nullable = false)
     private String area;
 
-    private String genrename;
+    private String genrenm;
 
-//    현재 날짜랑 비교해서 자동으로 바뀌게 ?
-//    schedule 설정
-    private String fstate;
+    private String fstate;  // 공연 상태 (예정/공연중/완료) → Service에서 상태 변경 관리
 
-    @OneToOne(mappedBy = "festival",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToOne(mappedBy = "festival", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonBackReference
     private FestivalDetail festivalDetail;
 }
