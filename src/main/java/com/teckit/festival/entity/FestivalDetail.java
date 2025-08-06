@@ -1,13 +1,11 @@
 package com.teckit.festival.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import org.hibernate.annotations.DynamicInsert;
 import lombok.*;
 
 import java.util.List;
 
-@DynamicInsert
 @Entity
 @Table(name = "festival_detail")
 @Getter
@@ -23,7 +21,7 @@ public class FestivalDetail {
 
     @OneToOne
     @JoinColumn(name = "fid")
-    @JsonBackReference
+    @JsonManagedReference
     private Festival festival;
 
     private String fcltyid;
@@ -33,6 +31,8 @@ public class FestivalDetail {
     private String fcltynm;
     private String fcast;
     private String fage;
+
+    @Column(nullable = false)
     private int ticketPrice;
 
     @Column(length = 1000)
@@ -44,19 +44,21 @@ public class FestivalDetail {
     private String genrenm;
     private String fstate;
     private String visit;
-    @Column(name = "available_nop")
-    private Integer availableNop = 0;
+    private int availableNOP;
     private String updatedate;
 
-    // 조회수 (기본값 0)
     @Builder.Default
     private int views = 0;
 
     @ElementCollection
-    @CollectionTable(name = "festival_detail_styurls", joinColumns = @JoinColumn(name = "festival_detail_id"))
+    @CollectionTable(
+            name = "festival_detail_styurls",
+            joinColumns = @JoinColumn(name = "festival_detail_id")
+    )
     @Column(name = "url")
     private List<String> styurls;
 
     @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<FestivalSchedule> schedules;
 }
