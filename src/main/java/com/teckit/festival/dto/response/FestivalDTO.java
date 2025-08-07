@@ -4,14 +4,22 @@ import com.teckit.festival.entity.Festival;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FestivalDTO {
+    private String id;
+
 //    공연 id
     @XmlElement private String mt20id;
 //    공연명
@@ -45,7 +53,7 @@ public class FestivalDTO {
                 .poster(poster)
                 .area(area)
                 .fcltynm(fcltynm)
-                .genrename(genrenm)
+                .genrenm(genrenm)
                 .fstate(prfstate)
                 .build();
     }

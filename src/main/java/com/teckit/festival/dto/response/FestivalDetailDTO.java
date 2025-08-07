@@ -51,7 +51,6 @@ public class FestivalDetailDTO {
     @XmlElement(name = "styurl")
     private List<String> styurls;
 
-
     public FestivalDetail toEntity(Festival festival,int ticketPrice,int availableNOP) {
         return FestivalDetail.builder()
                 .festival(festival)

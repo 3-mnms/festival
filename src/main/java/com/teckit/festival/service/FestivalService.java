@@ -1,8 +1,8 @@
 package com.teckit.festival.service;
 
+import com.teckit.festival.dto.response.FestivalDTO;
 import com.teckit.festival.dto.response.FestivalDetailDTO;
 import com.teckit.festival.dto.response.FestivalDetailListDTO;
-import com.teckit.festival.dto.response.FestivalDTO;
 import com.teckit.festival.dto.response.FestivalListDTO;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
@@ -23,7 +23,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,116 +31,48 @@ import static com.teckit.festival.util.XmlApiUtil.fetchAndParseXml;
 @Service
 @RequiredArgsConstructor
 public class FestivalService {
+
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository festivalDetailRepository;
     private final FestivalScheduleRepository festivalScheduleRepository;
-
-
     private final RestClient restClient;
 
     @Value("${festival-api-key}")
     private String festivalApiKey;
 
-
-    public List<Festival> searchByGenre(String genre) {
-        return festivalRepository.findByGenrename(genre);
-    }
-
-    public List<Festival> searchByKeyword(String keyword) {
-        return festivalRepository.findByFnameContaining(keyword);
-    }
-
-    public List<Festival> searchByGenreAndKeyword(String genre, String keyword) {
-        return festivalRepository.findByGenrenameAndFnameContaining(genre, keyword);
-    }
-
-    public List<String> getCategories(){
-        return festivalDetailRepository.findDistinctGenrenm();
-    }
-
-
     public Page<Festival> getFestivals(Pageable pageable) {
         return festivalRepository.findAll(pageable);
     }
 
-    public Optional<FestivalDetail> getFestivalDetail(String id){
+    public Optional<FestivalDetail> getFestivalDetail(String id) {
         return festivalDetailRepository.findByFestivalId(id);
     }
 
-    public int getViews(String id){
-        FestivalDetail festivalDetail = getDetail(id);
-
-        return festivalDetail.getViews();
-    }
-
-
     @Transactional
-    public void changeFstate() {
-        List<Festival> festivals = festivalRepository.findAll();
-        LocalDate today = LocalDate.now();
+    public void fetchAndSaveFestivalListAndDetail(String stdate, String eddate) {
+        List<FestivalDTO> dtoList = fetchFestival(stdate, eddate);
 
-        for (Festival festival : festivals) {
-            String newState;
-
-            if (today.isBefore(festival.getFdfrom())) {
-                newState = "공연예정";
-            } else if (!today.isAfter(festival.getFdto())) {
-                newState = "공연중";
-            } else {
-                newState = "공연완료";
-            }
-
-            if (!newState.equals(festival.getFstate())) {
-                festival.setFstate(newState); // setter가 있어야 함
-            }
-        }
-    }
-
-
-    @Transactional
-    public void increaseViews(String id) {
-        FestivalDetail festivalDetail = getDetail(id);
-
-        festivalDetail.setViews(festivalDetail.getViews() + 1); // 조회수 증가
-        // JPA @Transactional 이기 때문에 save() 호출 없이도 flush됨
-    }
-
-
-    @Transactional
-    public void fetchAndSaveFestivalListAndDetail(String stdate,String eddate) {
-
-        List<FestivalDTO> dtoList = fetchFestival(stdate,eddate);
-
-//        todo : 불필요한 연산 과정 줄이기
         for (FestivalDTO festivalDTO : dtoList) {
             boolean exists = festivalRepository.existsById(festivalDTO.getMt20id());
+            if (exists) continue;
 
-            if(exists) continue;
+            FestivalDetailDTO detailResponse = fetchFestivalDetail(festivalDTO.getMt20id());
+            if (detailResponse == null) continue;
 
-            FestivalDetailDTO detailResponse=fetchFestivalDetail(festivalDTO.getMt20id());
+            Festival festival = festivalDTO.toEntity();
+            int ticketPrice = FestivalScheduleGenerator.generateRandomPrice();
+            int availableNOP = FestivalScheduleGenerator.generateRandomAvailableNOP();
 
-            if(detailResponse==null) continue;
-
-            Festival festival=festivalDTO.toEntity();
-
-            int ticketPrice=FestivalScheduleGenerator.generateRandomPrice();
-            int availableNOP=FestivalScheduleGenerator.generateRandomAvailableNOP();
-
-            FestivalDetail festivalDetail=detailResponse.toEntity(festival,ticketPrice,availableNOP);
-            List<FestivalSchedule> festivalSchedules= FestivalScheduleGenerator.generateRandomSchedules(festivalDetail);
+            FestivalDetail festivalDetail = detailResponse.toEntity(festival, ticketPrice, availableNOP);
+            List<FestivalSchedule> festivalSchedules = FestivalScheduleGenerator.generateRandomSchedules(festivalDetail);
             festivalDetail.setSchedules(festivalSchedules);
 
             festivalRepository.save(festival);
             festivalDetailRepository.save(festivalDetail);
         }
     }
-    private FestivalDetail getDetail(String id) {
-        return festivalDetailRepository.findByFestivalId(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
-    }
 
-    public List<FestivalDTO> fetchFestival(String stdate,String eddate){
-
+    private List<FestivalDTO> fetchFestival(String stdate, String eddate) {
         String uri = UriComponentsBuilder.fromPath("")
                 .queryParam("service", festivalApiKey)
                 .queryParam("stdate", stdate)
@@ -152,19 +83,48 @@ public class FestivalService {
                 .build()
                 .toUriString();
 
-        FestivalListDTO response = fetchAndParseXml(restClient,uri, FestivalListDTO.class);
-
+        FestivalListDTO response = fetchAndParseXml(restClient, uri, FestivalListDTO.class);
         return response.getFestivalList();
     }
 
-
-    public FestivalDetailDTO fetchFestivalDetail(String id){
+    private FestivalDetailDTO fetchFestivalDetail(String id) {
         String uri = UriComponentsBuilder.fromPath("/" + id)
                 .queryParam("service", festivalApiKey)
                 .build()
                 .toUriString();
 
-        FestivalDetailListDTO response = fetchAndParseXml(restClient,uri, FestivalDetailListDTO.class);
+        FestivalDetailListDTO response = fetchAndParseXml(restClient, uri, FestivalDetailListDTO.class);
         return response.getFestivalDetailList().get(0);
     }
+
+    public List<Festival> searchByGenreAndKeyword(String genre, String keyword) {
+        return festivalRepository.findByGenrenmAndFnameContaining(genre, keyword);
+    }
+
+    public List<Festival> searchByGenre(String genre) {
+        return festivalRepository.findByGenrenm(genre);
+    }
+
+    public List<Festival> searchByKeyword(String keyword) {
+        return festivalRepository.findByFnameContaining(keyword);
+    }
+
+    public List<String> getCategories() {
+        return festivalDetailRepository.findDistinctGenrenm();
+    }
+
+    public int getViews(String id) {
+        FestivalDetail detail = festivalDetailRepository.findByFestivalId(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        return detail.getViews();
+    }
+
+    @Transactional
+    public int increaseViews(String id) {
+        FestivalDetail detail = festivalDetailRepository.findByFestivalId(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        detail.setViews(detail.getViews() + 1);
+        return detail.getViews();
+    }
+
 }
