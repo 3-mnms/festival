@@ -28,8 +28,8 @@ public class FestivalRegisterDTO {
     @Schema(description = "공연 종료일", example = "2025-08-10")
     private LocalDate fdto;
 
-    @Schema(description = "포스터 URL", example = "https://example.com/poster.jpg")
-    private String poster;
+    @Schema(description = "포스터 이미지 URL", example = "https://example.com/poster.jpg")
+    private String posterFile;
 
     @Schema(description = "공연 지역", example = "서울")
     private String area;
@@ -64,5 +64,17 @@ public class FestivalRegisterDTO {
 
         @Schema(description = "티켓 가격", example = "80000")
         private int ticketPrice;
+
+        @Schema(description = "공연장 주소", example = "서울특별시 종로구 세종대로 175")
+        private String faddress;
+
+        @Schema(description = "티켓 수령 방식 (0: 일괄배송, 1: 현장수령, 2: 둘다)", example = "0")
+        private int ticketPick;
+
+        @Schema(description = "티켓 1인당 최대 구매 수량", example = "4")
+        private int maxPurchase;
+
+        @Schema(description = "상세 이미지 리스트", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
+        private List<String> contentFile;
     }
 }

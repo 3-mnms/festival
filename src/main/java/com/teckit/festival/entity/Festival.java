@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Getter
@@ -17,6 +18,10 @@ public class Festival {
     @Id
     @Column(unique = true)
     private String id;
+
+    @OneToOne(mappedBy = "festival", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonBackReference
+    private FestivalDetail festivalDetail;
 
     @Column(nullable = true)
     private Long hid;
@@ -31,7 +36,7 @@ public class Festival {
     private LocalDate fdto;
 
     @Column(nullable = false)
-    private String poster;
+    private String posterFile;
 
     @Column(nullable = false)
     private String fcltynm;
@@ -43,7 +48,12 @@ public class Festival {
 
     private String fstate;  // 공연 상태 (예정/공연중/완료) → Service에서 상태 변경 관리
 
-    @OneToOne(mappedBy = "festival", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonBackReference
-    private FestivalDetail festivalDetail;
+    private String faddress;
+
+    private int ticketPick;
+
+    private int maxPurchase;
+
+    @ElementCollection
+    private List<String> contentFile;
 }

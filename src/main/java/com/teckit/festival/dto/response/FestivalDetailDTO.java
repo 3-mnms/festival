@@ -2,10 +2,10 @@ package com.teckit.festival.dto.response;
 
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,7 +34,7 @@ public class FestivalDetailDTO {
     private String entrpsnmH; // 주최
     private String entrpsnmS; // 주관
     private String pcseguidance; // 티켓 가격
-    private String poster; // 포스터 이미지
+    private String posterFile; // 포스터 이미지
     private String sty; // 줄거리
     private String genrenm; // 공연 장르
     private String prfstate; // 공연 상태
@@ -47,11 +47,17 @@ public class FestivalDetailDTO {
     private String musicalcreate; // 뮤지컬 창작 여부
     private String updatedate; // 최종 수정일
 
-    @XmlElementWrapper(name = "styurls")
-    @XmlElement(name = "styurl")
-    private List<String> styurls;
+    private String faddress; // 공연장 주소
 
-    public FestivalDetail toEntity(Festival festival,int ticketPrice,int availableNOP) {
+    @Min(0)
+    @Max(2)
+    private int ticketPick; // 티켓 수령 방식 (0, 1, 2)
+
+    private int maxPurchase; // 구매 제한
+
+    private List<String> contentFile; // 상세 이미지 리스트
+
+    public FestivalDetail toEntity(Festival festival, int ticketPrice, int availableNOP) {
         return FestivalDetail.builder()
                 .festival(festival)
                 .availableNOP(availableNOP)
@@ -62,15 +68,18 @@ public class FestivalDetailDTO {
                 .fcltynm(fcltynm)
                 .fcast(prfcast)
                 .fage(prfage)
+                .ticketPick(ticketPick)
+                .maxPurchase(maxPurchase)
                 .ticketPrice(ticketPrice)
-                .poster(poster)
+                .posterFile(posterFile)
                 .story(sty)
                 .genrenm(genrenm)
                 .fstate(prfstate)
                 .visit(visit)
                 .updatedate(updatedate)
-                .styurls(styurls)
-//                여기서 이거 넣어주면 안되고,
+                .faddress(faddress)
+                .contentFile(contentFile)
+                .views(0)
                 .build();
     }
 }

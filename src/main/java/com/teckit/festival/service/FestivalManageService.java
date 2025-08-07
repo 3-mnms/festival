@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,21 +34,8 @@ public class FestivalManageService {
     public String registerFestivalWithDetails(FestivalRegisterDTO request) {
         String festivalId = generateUniqueFestivalId();
 
-        Festival festival = Festival.builder()
-                .id(festivalId)
-                .hid(request.getHid())
-                .fname(request.getFname())
-                .fdfrom(request.getFdfrom())
-                .fdto(request.getFdto())
-                .poster(request.getPoster())
-                .area(request.getArea())
-                .fcltynm(request.getFcltynm())
-                .genrenm(request.getGenrenm())
-                .fstate("공연예정")
-                .build();
-
+        // ✅ FestivalDetail 먼저 생성
         FestivalDetail detail = FestivalDetail.builder()
-                .festival(festival)
                 .fcltyid(request.getDetail().getFcltyid())
                 .fname(request.getFname())
                 .fdfrom(request.getFdfrom().toString())
@@ -64,8 +50,33 @@ public class FestivalManageService {
                 .availableNOP(0)
                 .updatedate(LocalDate.now().toString())
                 .views(0)
+                .faddress(request.getDetail().getFaddress())
+                .ticketPick(request.getDetail().getTicketPick())
+                .maxPurchase(request.getDetail().getMaxPurchase())
+                .contentFile(request.getDetail().getContentFile())
                 .build();
 
+        // ✅ Festival 생성 및 연결
+        Festival festival = Festival.builder()
+                .id(festivalId)
+                .hid(request.getHid())
+                .fname(request.getFname())
+                .fdfrom(request.getFdfrom())
+                .fdto(request.getFdto())
+                .posterFile(request.getPosterFile())
+                .area(request.getArea())
+                .fcltynm(request.getFcltynm())
+                .genrenm(request.getGenrenm())
+                .fstate("공연예정")
+                .faddress(request.getDetail().getFaddress())
+                .ticketPick(request.getDetail().getTicketPick())
+                .maxPurchase(request.getDetail().getMaxPurchase())
+                .contentFile(request.getDetail().getContentFile())
+                .build();
+
+        detail.setFestival(festival);
+
+        // ✅ 스케줄 생성 및 연결
         List<FestivalSchedule> schedules = request.getSchedules().stream()
                 .map(s -> FestivalSchedule.builder()
                         .festivalDetail(detail)
@@ -75,9 +86,9 @@ public class FestivalManageService {
                 .collect(Collectors.toList());
 
         detail.setSchedules(schedules);
-        festival.setFestivalDetail(detail);
 
-        festivalRepository.save(festival);  // cascade 로 detail, schedule도 같이 저장됨
+        // ✅ Detail 저장 시 cascade로 Festival, Schedule 함께 저장됨
+        detailRepository.save(detail);
 
         return festivalId;
     }
@@ -91,7 +102,7 @@ public class FestivalManageService {
         festival.setFdfrom(LocalDate.parse(dto.getPrfpdfrom()));
         festival.setFdto(LocalDate.parse(dto.getPrfpdto()));
         festival.setFcltynm(dto.getFcltynm());
-        festival.setPoster(dto.getPoster());
+        festival.setPosterFile(dto.getPoster());
         festival.setArea(dto.getArea());
         festival.setGenrenm(dto.getGenrenm());
 

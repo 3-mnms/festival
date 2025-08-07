@@ -19,7 +19,8 @@ public class FestivalDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "festival_id", referencedColumnName = "id")
     @JoinColumn(name = "fid")
     @JsonManagedReference
     private Festival festival;
@@ -32,11 +33,17 @@ public class FestivalDetail {
     private String fcast;
     private String fage;
 
+    private String faddress;
+
     @Column(nullable = false)
     private int ticketPrice;
 
+    private int maxPurchase;
+
+    private int ticketPick;
+
     @Column(length = 1000)
-    private String poster;
+    private String posterFile;
 
     @Lob
     private String story;
@@ -44,20 +51,24 @@ public class FestivalDetail {
     private String genrenm;
     private String fstate;
     private String visit;
+
     private int availableNOP;
+
     private String updatedate;
 
     @Builder.Default
     private int views = 0;
 
+    // 상세 이미지 URL 리스트 (상세 페이지 이미지들)
     @ElementCollection
     @CollectionTable(
-            name = "festival_detail_styurls",
-            joinColumns = @JoinColumn(name = "festival_detail_id")
+            name = "festival_detail_contents",  // 테이블명
+            joinColumns = @JoinColumn(name = "festival_detail_id")  // FK
     )
-    @Column(name = "url")
-    private List<String> styurls;
+    @Column(name = "content_image") // 컬럼명
+    private List<String> contentFile;
 
+    // 공연 일정 정보 (요일 + 시간)
     @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<FestivalSchedule> schedules;
