@@ -15,4 +15,7 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
 
     @Query("SELECT f FROM FestivalDetail f WHERE f.festival.id = :fid")
     Optional<FestivalDetail> findByFestivalId(@Param("fid") String fid);
+
+    // 🎯 중복 fid 체크용
+    boolean existsById(String fid);
 }

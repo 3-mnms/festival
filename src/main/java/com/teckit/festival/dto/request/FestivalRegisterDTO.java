@@ -16,8 +16,8 @@ import java.util.List;
 @Schema(description = "공연 등록 요청 DTO")
 public class FestivalRegisterDTO {
 
-    @Schema(description = "주최자 ID", example = "1")
-    private Long hid;
+    @Schema(description = "주최자 ID", example = "host01")
+    private String loginId;
 
     @Schema(description = "공연명", example = "뮤지컬 캣츠")
     private String fname;
@@ -74,7 +74,29 @@ public class FestivalRegisterDTO {
         @Schema(description = "티켓 1인당 최대 구매 수량", example = "4")
         private int maxPurchase;
 
-        @Schema(description = "상세 이미지 리스트", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
+        @Schema(description = "관람 연령", example = "12")
+        private int prfage;
+
+        @Schema(description = "공연 상태", example = "공연예정")
+        private String prfstate;
+
+        @Schema(description = "수용 가능 인원", example = "300")
+        private int availableNOP;
+
+        @Schema(description = "상세 이미지 리스트", example = "[\"https://example.com/image1.jpg\"]")
         private List<String> contentFile;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "공연 일정 DTO")
+    public static class FestivalScheduleDTO {
+        @Schema(description = "요일", example = "MON")
+        private String dayOfWeek;
+
+        @Schema(description = "시간", example = "19:00")
+        private String time;
     }
 }

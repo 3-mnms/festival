@@ -26,9 +26,10 @@ public interface FestivalScheduleMapper {
     List<FestivalScheduleDTO> toDtoList(List<FestivalSchedule> entityList);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "festivalDetail", ignore = true) // 명시적 무시
     void updateEntityFromDto(FestivalScheduleDTO dto, @MappingTarget FestivalSchedule entity);
 
-    default Long mapFestivalDetailId(FestivalSchedule entity) {
+    default String mapFestivalDetailId(FestivalSchedule entity) {
         return entity.getFestivalDetail() != null ? entity.getFestivalDetail().getId() : null;
     }
 }

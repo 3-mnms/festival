@@ -1,7 +1,6 @@
 package com.teckit.festival.service;
 
 import com.teckit.festival.dto.request.FestivalRegisterDTO;
-import com.teckit.festival.dto.request.FestivalScheduleDTO;
 import com.teckit.festival.dto.response.FestivalDTO;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
@@ -9,7 +8,6 @@ import com.teckit.festival.entity.FestivalSchedule;
 import com.teckit.festival.enumeration.FestivalScheduleDay;
 import com.teckit.festival.exception.BusinessException;
 import com.teckit.festival.exception.ErrorCode;
-import com.teckit.festival.mapper.FestivalScheduleMapper;
 import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.repository.FestivalScheduleRepository;
@@ -28,14 +26,15 @@ public class FestivalManageService {
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository detailRepository;
     private final FestivalScheduleRepository scheduleRepository;
-    private final FestivalScheduleMapper festivalScheduleMapper;
 
     @Transactional
     public String registerFestivalWithDetails(FestivalRegisterDTO request) {
-        String festivalId = generateUniqueFestivalId();
+        String fid = generateUniqueFid();
 
-        // ✅ FestivalDetail 먼저 생성
+        // 1️⃣ FestivalDetail 생성
         FestivalDetail detail = FestivalDetail.builder()
+                .id(fid)
+                .loginId(request.getLoginId())
                 .fcltyid(request.getDetail().getFcltyid())
                 .fname(request.getFname())
                 .fdfrom(request.getFdfrom().toString())
@@ -46,9 +45,7 @@ public class FestivalManageService {
                 .ticketPrice(request.getDetail().getTicketPrice())
                 .genrenm(request.getGenrenm())
                 .fstate("공연예정")
-                .visit("0")
                 .availableNOP(0)
-                .updatedate(LocalDate.now().toString())
                 .views(0)
                 .faddress(request.getDetail().getFaddress())
                 .ticketPick(request.getDetail().getTicketPick())
@@ -56,27 +53,7 @@ public class FestivalManageService {
                 .contentFile(request.getDetail().getContentFile())
                 .build();
 
-        // ✅ Festival 생성 및 연결
-        Festival festival = Festival.builder()
-                .id(festivalId)
-                .hid(request.getHid())
-                .fname(request.getFname())
-                .fdfrom(request.getFdfrom())
-                .fdto(request.getFdto())
-                .posterFile(request.getPosterFile())
-                .area(request.getArea())
-                .fcltynm(request.getFcltynm())
-                .genrenm(request.getGenrenm())
-                .fstate("공연예정")
-                .faddress(request.getDetail().getFaddress())
-                .ticketPick(request.getDetail().getTicketPick())
-                .maxPurchase(request.getDetail().getMaxPurchase())
-                .contentFile(request.getDetail().getContentFile())
-                .build();
-
-        detail.setFestival(festival);
-
-        // ✅ 스케줄 생성 및 연결
+        // 2️⃣ Schedule 연결
         List<FestivalSchedule> schedules = request.getSchedules().stream()
                 .map(s -> FestivalSchedule.builder()
                         .festivalDetail(detail)
@@ -87,15 +64,30 @@ public class FestivalManageService {
 
         detail.setSchedules(schedules);
 
-        // ✅ Detail 저장 시 cascade로 Festival, Schedule 함께 저장됨
-        detailRepository.save(detail);
+        // 3️⃣ Festival 생성
+        Festival festival = Festival.builder()
+                .loginId(request.getLoginId())
+                .fname(request.getFname())
+                .fdfrom(request.getFdfrom())
+                .fdto(request.getFdto())
+                .posterFile(request.getPosterFile())
+                .area(request.getArea())
+                .fcltynm(request.getFcltynm())
+                .genrenm(request.getGenrenm())
+                .fstate("공연예정")
+                .festivalDetail(detail)
+                .build();
 
-        return festivalId;
+        detail.setFestival(festival); // 양방향 연결
+
+        detailRepository.save(detail); // Cascade로 모두 저장
+
+        return fid;
     }
 
     @Transactional
     public Festival updateFestival(String fid, FestivalDTO dto) {
-        Festival festival = festivalRepository.findById(fid)
+        Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         festival.setFname(dto.getPrfnm());
@@ -110,45 +102,50 @@ public class FestivalManageService {
     }
 
     @Transactional
-    public void deleteFestivalByHost(String fid, Long hostId) {
-        Festival festival = festivalRepository.findById(fid)
+    public void deleteFestivalByHost(String fid, String loginId) {
+        Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        if (!festival.getHid().equals(hostId)) {
+        if (!festival.getLoginId().equals(loginId)) {
             throw new BusinessException(ErrorCode.NO_AUTHORITY);
         }
 
         festivalRepository.delete(festival);
     }
 
-    public List<Festival> getFestivalsByHost(Long hostId) {
-        return festivalRepository.findByHid(hostId);
+    public List<FestivalDTO> getFestivalsByHost(String loginId) {
+        return festivalRepository.findByLoginId(loginId)
+                .stream()
+                .map(FestivalDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 
-    public List<Festival> getAllFestivals() {
-        return festivalRepository.findAll();
+    public List<FestivalDTO> getAllFestivals() {
+        return festivalRepository.findAll()
+                .stream()
+                .map(FestivalDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public void adminDeleteFestival(String fid) {
-        Festival festival = festivalRepository.findById(fid)
+        Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
         festivalRepository.delete(festival);
     }
 
-    private String generateUniqueFestivalId() {
-        String id;
+    private String generateUniqueFid() {
+        String fid;
         do {
-            id = "PF" + randomNumeric(6);
-        } while (festivalRepository.existsById(id));
-        return id;
+            fid = "PF" + randomNumeric(6);
+        } while (detailRepository.existsById(fid));
+        return fid;
     }
 
     private String randomNumeric(int count) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < count; i++) {
-            int digit = (int)(Math.random() * 10);  // 0~9
-            builder.append(digit);
+            builder.append((int) (Math.random() * 10));
         }
         return builder.toString();
     }

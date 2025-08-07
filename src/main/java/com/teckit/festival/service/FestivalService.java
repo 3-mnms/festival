@@ -53,22 +53,38 @@ public class FestivalService {
         List<FestivalDTO> dtoList = fetchFestival(stdate, eddate);
 
         for (FestivalDTO festivalDTO : dtoList) {
-            boolean exists = festivalRepository.existsById(festivalDTO.getMt20id());
-            if (exists) continue;
+            // 먼저 Festival 엔티티 생성
+            Festival festival = festivalDTO.toEntity();
 
-            FestivalDetailDTO detailResponse = fetchFestivalDetail(festivalDTO.getMt20id());
+            // 외부 공연 ID (mt20id) 기준 중복 검사
+            String mt20id = festivalDTO.getMt20id();
+            if (mt20id == null || festivalRepository.existsById(mt20id)) {
+                continue;
+            }
+
+            // 상세정보 요청
+            FestivalDetailDTO detailResponse = fetchFestivalDetail(mt20id);
             if (detailResponse == null) continue;
 
-            Festival festival = festivalDTO.toEntity();
+            // 랜덤 정보 생성
             int ticketPrice = FestivalScheduleGenerator.generateRandomPrice();
             int availableNOP = FestivalScheduleGenerator.generateRandomAvailableNOP();
 
-            FestivalDetail festivalDetail = detailResponse.toEntity(festival, ticketPrice, availableNOP);
+            // 1️⃣ FestivalDetail 먼저 생성
+            FestivalDetail festivalDetail = detailResponse.toEntity(ticketPrice, availableNOP);
+
+            // 2️⃣ FestivalSchedule 생성 → Detail에 설정
             List<FestivalSchedule> festivalSchedules = FestivalScheduleGenerator.generateRandomSchedules(festivalDetail);
             festivalDetail.setSchedules(festivalSchedules);
 
-            festivalRepository.save(festival);
+            // 3️⃣ Detail 먼저 저장 (여기서 id = PFxxxxxx 생성됨)
             festivalDetailRepository.save(festivalDetail);
+
+            // 4️⃣ 그 ID를 festival에 넣음
+            festival.setFid(festivalDetail.getId());
+
+            // 5️⃣ festival 저장
+            festivalRepository.save(festival);
         }
     }
 

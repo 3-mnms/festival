@@ -1,6 +1,6 @@
 package com.teckit.festival.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,15 +16,16 @@ import java.util.List;
 public class Festival {
 
     @Id
-    @Column(unique = true)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;  // 자동 생성 PK
 
-    @OneToOne(mappedBy = "festival", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonBackReference
+    @OneToOne
+    @JoinColumn(name = "fid", referencedColumnName = "id") // FK → FestivalDetail.id
+    @JsonManagedReference
     private FestivalDetail festivalDetail;
 
     @Column(nullable = true)
-    private Long hid;
+    private String loginId;
 
     @Column(nullable = false)
     private String fname;
@@ -44,16 +45,24 @@ public class Festival {
     @Column(nullable = false)
     private String area;
 
+    private String fage;
     private String genrenm;
-
-    private String fstate;  // 공연 상태 (예정/공연중/완료) → Service에서 상태 변경 관리
-
+    private String fstate;
     private String faddress;
 
-    private int ticketPick;
-
-    private int maxPurchase;
+    private int ticketPick;       // 티컷 수령 방법 (0~2)
+    private int maxPurchase;      //
+    private int ticketPrice;      //
+    private int availableNOP;     //
 
     @ElementCollection
     private List<String> contentFile;
+
+    // ✨ fid 설정 하는 메서드 수정
+    public void setFid(String fid) {
+        if (this.festivalDetail == null) {
+            this.festivalDetail = new FestivalDetail();
+        }
+        this.festivalDetail.setId(fid);
+    }
 }
