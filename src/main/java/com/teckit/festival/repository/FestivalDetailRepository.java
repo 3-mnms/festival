@@ -13,7 +13,7 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
     @Query("SELECT DISTINCT f.genrenm FROM FestivalDetail f WHERE f.genrenm IS NOT NULL")
     List<String> findDistinctGenrenm();
 
-    @Query("SELECT f FROM FestivalDetail f WHERE f.festival.id = :fid")
+    @Query("SELECT f FROM FestivalDetail f WHERE f.id = :fid")
     Optional<FestivalDetail> findByFestivalId(@Param("fid") String fid);
 
     // 🎯 중복 fid 체크용

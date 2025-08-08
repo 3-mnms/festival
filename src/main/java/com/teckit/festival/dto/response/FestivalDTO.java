@@ -8,21 +8,21 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FestivalDTO {
-    private String mt20id;
-    private String prfnm;
-    private String prfpdfrom;
-    private String prfpdto;
-    private String fcltynm;
-    private String poster;
-    private String area;
-    private String genrenm;
-    private String prfstate;
-    private String prfage;
-    private String loginId;
-    private int ticketPick;
-    private int maxPurchase;
-    private int ticketPrice;
-    private int availableNOP;
+    private String mt20id;       // FestivalDetail.id
+    private String prfnm;        // 공연명
+    private String prfpdfrom;    // 시작일
+    private String prfpdto;      // 종료일
+    private String fcltynm;      // 장소명
+    private String poster;       // 썸네일
+    //private String area;         // 지역
+    private String genrenm;      // 장르
+    private String prfstate;     // 상태
+    private String prfage;       // 관람 연령
+    //private String loginId;      // 주최자 ID
+    private int ticketPick;      // 티켓 방식
+    private int maxPurchase;     // 1인 최대 구매 수량
+    private int ticketPrice;     // 티켓 가격
+    //private int availableNOP;    // 수용 인원
 
     public static FestivalDTO fromEntity(Festival festival) {
         return FestivalDTO.builder()
@@ -32,15 +32,15 @@ public class FestivalDTO {
                 .prfpdto(festival.getFdto())
                 .fcltynm(festival.getFcltynm())
                 .poster(festival.getPosterFile())
-                .area(festival.getArea())
+                //.area(festival.getArea())
                 .genrenm(festival.getGenrenm())
                 .prfstate(festival.getFstate())
                 .prfage(festival.getFage())
-                .loginId(festival.getLoginId())
-                .ticketPick(festival.getTicketPick())
-                .maxPurchase(festival.getMaxPurchase())
-                .ticketPrice(festival.getTicketPrice())
-                .availableNOP(festival.getAvailableNOP())
+                //.loginId(festival.getLoginId())
+                .ticketPick(festival.getFestivalDetail().getTicketPick())
+                .maxPurchase(festival.getFestivalDetail().getMaxPurchase())
+                .ticketPrice(festival.getFestivalDetail().getTicketPrice())
+                //.availableNOP(festival.getAvailableNOP())
                 .build();
     }
 }

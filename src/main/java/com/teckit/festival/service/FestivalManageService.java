@@ -8,12 +8,18 @@ import com.teckit.festival.entity.FestivalSchedule;
 import com.teckit.festival.enumeration.FestivalScheduleDay;
 import com.teckit.festival.exception.BusinessException;
 import com.teckit.festival.exception.ErrorCode;
+import com.teckit.festival.kafka.FestivalKafkaProducer;
 import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.repository.FestivalScheduleRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.teckit.festival.kafka.FestivalKafkaProducer;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +32,8 @@ public class FestivalManageService {
     private final FestivalDetailRepository detailRepository;
     private final FestivalScheduleRepository scheduleRepository;
 
+    private final FestivalKafkaProducer kafkaProducer;
+
     /**
      * 공연 등록 (기본정보 + 상세정보 + 일정)
      */
@@ -33,57 +41,64 @@ public class FestivalManageService {
     public String registerFestivalWithDetails(FestivalRegisterDTO request) {
         String fid = generateUniqueFid();
 
-        // 상세정보 엔티티 생성
+        var detailReq = request.getDetail();
+        if (detailReq == null) {
+            throw new IllegalArgumentException("detail is required");
+        }
+
+        int safeTicketPick  = Math.max(1, detailReq.getTicketPick());
+        int safeMaxPurchase = Math.max(1, detailReq.getMaxPurchase());
+        int safeAvailable   = Math.max(0, detailReq.getAvailableNOP());
+
         FestivalDetail detail = FestivalDetail.builder()
                 .id(fid)
                 .loginId(request.getLoginId())
-                .fcltyid(request.getDetail().getFcltyid())
+                .fcltyid(detailReq.getFcltyid())
                 .fname(request.getFname())
                 .fdfrom(request.getFdfrom())
                 .fdto(request.getFdto())
                 .fcltynm(request.getFcltynm())
-                .fcast(request.getDetail().getFcast())
-                .story(request.getDetail().getStory())
-                .ticketPrice(request.getDetail().getTicketPrice())
+                .fcast(detailReq.getFcast())
+                .story(detailReq.getStory())
+                .ticketPrice(detailReq.getTicketPrice())
                 .genrenm(request.getGenrenm())
                 .fstate("공연예정")
-                .availableNOP(0)
+                .availableNOP(safeAvailable)
                 .views(0)
-                .faddress(request.getDetail().getFaddress())
-                .ticketPick(request.getDetail().getTicketPick())
-                .maxPurchase(request.getDetail().getMaxPurchase())
-                .contentFile(request.getDetail().getContentFile())
+                .faddress(detailReq.getFaddress())
+                .ticketPick(safeTicketPick)
+                .maxPurchase(safeMaxPurchase)
+                .prfage(detailReq.getPrfage())
+                .posterFile(request.getPosterFile())
+                .contentFile(detailReq.getContentFile())
                 .build();
 
-        // 공연 일정 엔티티 리스트 생성
-        List<FestivalSchedule> schedules = request.getSchedules().stream()
+        List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.<FestivalSchedule>of()
+                : request.getSchedules().stream()
                 .map(s -> FestivalSchedule.builder()
                         .festivalDetail(detail)
-                        .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek()))
+                        .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek().toUpperCase()))
                         .time(s.getTime())
                         .build())
-                .collect(Collectors.toList());
-
+                .collect(Collectors.toList()));
         detail.setSchedules(schedules);
 
-        // 공연 기본정보 엔티티 생성
         Festival festival = Festival.builder()
-                .loginId(request.getLoginId())
+                //.loginId(request.getLoginId())   // ✅ 필수
                 .fname(request.getFname())
                 .fdfrom(request.getFdfrom())
                 .fdto(request.getFdto())
                 .posterFile(request.getPosterFile())
-                .area(request.getArea())
                 .fcltynm(request.getFcltynm())
                 .genrenm(request.getGenrenm())
                 .fstate("공연예정")
                 .festivalDetail(detail)
                 .build();
-
         detail.setFestival(festival);
 
-        // 저장 (Cascade로 festival, schedules 함께 저장)
         detailRepository.save(detail);
+
+        kafkaProducer.send(detail);
 
         return fid;
     }
@@ -96,13 +111,32 @@ public class FestivalManageService {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
+        FestivalDetail detail = festival.getFestivalDetail();
+        if (detail != null) {
+            detail.setFname(dto.getPrfnm());
+            detail.setFdfrom(dto.getPrfpdfrom());
+            detail.setFdto(dto.getPrfpdto());
+            detail.setFcltynm(dto.getFcltynm());
+            detail.setPosterFile(dto.getPoster());
+            detail.setGenrenm(dto.getGenrenm());
+            detail.setFstate(dto.getPrfstate());
+            detail.setPrfage(dto.getPrfage());
+            detail.setTicketPick(Math.max(1, dto.getTicketPick()));
+            detail.setMaxPurchase(Math.max(1, dto.getMaxPurchase()));
+            detail.setTicketPrice(dto.getTicketPrice());
+        }
+
         festival.setFname(dto.getPrfnm());
         festival.setFdfrom(dto.getPrfpdfrom());
         festival.setFdto(dto.getPrfpdto());
         festival.setFcltynm(dto.getFcltynm());
         festival.setPosterFile(dto.getPoster());
-        festival.setArea(dto.getArea());
         festival.setGenrenm(dto.getGenrenm());
+        festival.setFstate(dto.getPrfstate());
+        festival.setFage(dto.getPrfage());
+
+        // 선택: 수정 후 카프카 전송
+        kafkaProducer.send(festival.getFestivalDetail());
 
         return festivalRepository.save(festival);
     }
@@ -115,18 +149,23 @@ public class FestivalManageService {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        if (!festival.getLoginId().equals(loginId)) {
+        if (!festival.getFestivalDetail().getLoginId().equals(loginId)) {
             throw new BusinessException(ErrorCode.NO_AUTHORITY);
         }
 
+        // 1) Festival 먼저 삭제 (FK가 Festival 쪽이라 먼저 지워도 OK)
         festivalRepository.delete(festival);
+
+        // 2) Detail 삭제
+        detailRepository.deleteById(fid);
     }
+
 
     /**
      * 주최자 공연 목록 조회
      */
     public List<FestivalDTO> getFestivalsByHost(String loginId) {
-        return festivalRepository.findByLoginId(loginId)
+        return festivalRepository.findByFestivalDetail_LoginId(loginId)
                 .stream()
                 .map(FestivalDTO::fromEntity)
                 .collect(Collectors.toList());

@@ -1,11 +1,14 @@
 package com.teckit.festival.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -30,6 +33,7 @@ public class FestivalRegisterDTO {
     @Schema(description = "포스터 이미지 URL", example = "https://example.com/poster.jpg")
     private String posterFile;
 
+    // NOTE: 현재 Festival 엔티티에서 area를 쓰지 않으면 서비스에서 무시됨
     @Schema(description = "공연 지역", example = "서울")
     private String area;
 
@@ -62,28 +66,34 @@ public class FestivalRegisterDTO {
         private String story;
 
         @Schema(description = "티켓 가격", example = "80000")
+        @Min(0)
         private int ticketPrice;
 
         @Schema(description = "공연장 주소", example = "서울특별시 종로구 세종대로 175")
         private String faddress;
 
-        @Schema(description = "티켓 수령 방식 (0: 일괄배송, 1: 현장수령, 2: 둘다)", example = "0")
+        @Schema(description = "티켓 수령 방식 (1: 현장수령, 2: 배송, 3: 둘다)", example = "1")
+        @Min(1) @Max(3)
         private int ticketPick;
 
         @Schema(description = "티켓 1인당 최대 구매 수량", example = "4")
+        @Min(1) @Max(10)
         private int maxPurchase;
 
-        @Schema(description = "관람 연령", example = "12")
-        private int prfage;
+        // ✅ 엔티티는 String이므로 타입을 맞춰두는 걸 추천
+        @Schema(description = "관람 연령(문자열)", example = "만 12세 이상")
+        private String prfage;
 
         @Schema(description = "공연 상태", example = "공연예정")
         private String prfstate;
 
         @Schema(description = "수용 가능 인원", example = "300")
+        @Min(0)
         private int availableNOP;
 
         @Schema(description = "상세 이미지 리스트", example = "[\"https://example.com/image1.jpg\"]")
-        private List<String> contentFile;
+        @Builder.Default
+        private List<String> contentFile = new ArrayList<>();
     }
 
     @Getter

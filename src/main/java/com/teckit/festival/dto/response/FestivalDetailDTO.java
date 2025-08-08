@@ -1,5 +1,6 @@
 package com.teckit.festival.dto.response;
 
+import com.teckit.festival.dto.FestivalKafkaDTO;
 import com.teckit.festival.entity.FestivalDetail;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -8,6 +9,7 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Builder
@@ -75,8 +77,18 @@ public class FestivalDetailDTO {
     private int ticketPick;
     @Min(1) @Max(4)
     private int maxPurchase;
+    private int availableNOP;
+    private int ticketPrice;
 
     public FestivalDetail toEntity(int ticketPrice, int availableNOP) {
+        // 기본값 보정
+        int safeTicketPick   = (this.ticketPick   <= 0) ? 1 : this.ticketPick;
+        int safeMaxPurchase  = (this.maxPurchase  <= 0) ? 1 : this.maxPurchase;
+        int safeAvailableNOP = (this.availableNOP <  0) ? 0 : this.availableNOP;
+
+        int finalAvailableNOP = Math.max(0, availableNOP);
+        int finalTicketPrice  = ticketPrice;
+
         return FestivalDetail.builder()
                 .id(mt20id)
                 .loginId(this.loginId != null ? this.loginId : "SYSTEM")
@@ -86,15 +98,16 @@ public class FestivalDetailDTO {
                 .fdto(prfpdto)
                 .fcltynm(fcltynm)
                 .fcast(prfcast)
-                .prfage(prfage)
+                .prfage(this.prfage)
                 .story(sty)
-                .ticketPrice(ticketPrice)
+                .ticketPrice(finalTicketPrice)
+                .availableNOP(finalAvailableNOP)
                 .genrenm(genrenm)
                 .fstate(prfstate)
-                .updatedate(updatedate)  // **추가**
+                .updatedate(updatedate)
                 .faddress(faddress)
-                .ticketPick(ticketPick)
-                .maxPurchase(maxPurchase)
+                .ticketPick(safeTicketPick)
+                .maxPurchase(safeMaxPurchase)
                 .posterFile(poster)
                 .contentFile(styurls != null ? styurls : new ArrayList<>())
                 .views(0)

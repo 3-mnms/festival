@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
-
 @Entity
 @Getter
 @Setter
@@ -23,39 +21,32 @@ public class Festival {
     @JsonManagedReference
     private FestivalDetail festivalDetail;
 
-    @Column
-    private String loginId;
+    //@Column(nullable = false)
+    //private String loginId; // 주최자 ID
 
     @Column(nullable = false)
-    private String fname;
+    private String fname; // 공연명
 
-    // 상세에서는 문자열이므로 이 필드는 nullable로 유지(원하면 파싱해서 set)
+    // 기간
     private String fdfrom;
     private String fdto;
 
     @Column(nullable = false)
-    private String posterFile;
+    private String posterFile; // 썸네일
 
     @Column(nullable = false)
-    private String fcltynm;
+    private String fcltynm; // 장소명
 
-    @Column(nullable = true)
-    private String area;
+    //@Column
+    //private String area; // 지역
 
-    private String fage;
-    private String genrenm;
-    private String fstate;
-    private String faddress;
+    private String fage;     // 연령 제한
+    private String genrenm;  // 장르
+    private String fstate;   // 상태
 
-    private int ticketPick;
-    private int maxPurchase;
-    private int ticketPrice;
-    private int availableNOP;
+    //private int availableNOP; // 수용 인원
 
-    @ElementCollection
-    private List<String> contentFile;
-
-    // 편의 메서드(필요하면)
+    // 편의 메서드
     public void setFid(String fid) {
         if (this.festivalDetail == null) {
             this.festivalDetail = new FestivalDetail();

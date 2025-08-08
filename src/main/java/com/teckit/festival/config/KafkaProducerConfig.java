@@ -1,6 +1,7 @@
+// src/main/java/com/teckit/festival/config/KafkaProducerConfig.java
 package com.teckit.festival.config;
 
-import com.teckit.festival.dto.FestivalEventDTO;
+import com.teckit.festival.dto.FestivalKafkaDTO;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
@@ -17,18 +18,16 @@ import java.util.Map;
 public class KafkaProducerConfig {
 
     @Bean
-    public ProducerFactory<String, FestivalEventDTO> festivalEventProducerFactory() {
-        Map<String, Object> config = new HashMap<>();
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.0.139:9092");
-        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        config.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false); //header
-
-        return new DefaultKafkaProducerFactory<>(config);
+    public ProducerFactory<String, FestivalKafkaDTO> festivalProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
-    public KafkaTemplate<String, FestivalEventDTO> festivalEventKafkaTemplate() {
-        return new KafkaTemplate<>(festivalEventProducerFactory());
+    public KafkaTemplate<String, FestivalKafkaDTO> festivalKafkaTemplate() {
+        return new KafkaTemplate<>(festivalProducerFactory());
     }
 }

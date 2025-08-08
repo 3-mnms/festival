@@ -1,5 +1,7 @@
 package com.teckit.festival.service;
 
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import com.teckit.festival.dto.response.FestivalDetailDTO;
 import com.teckit.festival.dto.response.FestivalDetailListDTO;
 import com.teckit.festival.dto.response.FestivalListDTO;
@@ -14,7 +16,6 @@ import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.util.FestivalScheduleGenerator;
 import jakarta.annotation.PostConstruct;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,7 +62,7 @@ public class FestivalService {
 
     /* ===================== 자동 수집 ===================== */
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void fetchAndSaveFestivalDetail(String mt20id) {
         if (mt20id == null || mt20id.isBlank()) {
             log.warn("⚠️ mt20id 비어있음");
@@ -80,7 +81,7 @@ public class FestivalService {
         if (existing.isPresent() &&
                 dto.getUpdatedate() != null &&
                 dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
-            log.info("⏭️ 변경 없음: {}", mt20id);
+            //log.info("⏭️ 변경 없음: {}", mt20id);
             return;
         }
 
@@ -106,12 +107,13 @@ public class FestivalService {
         festival.setGenrenm(dto.getGenrenm());
         festival.setFstate(dto.getPrfstate());
         festival.setFage(dto.getPrfage());
-        festival.setLoginId(dto.getLoginId() != null ? dto.getLoginId() : "SYSTEM");
+        //festival.setLoginId(dto.getLoginId() != null ? dto.getLoginId() : "SYSTEM");
+        /*
         festival.setTicketPick(dto.getTicketPick());
         festival.setMaxPurchase(dto.getMaxPurchase());
         festival.setTicketPrice(price);
         festival.setAvailableNOP(nop);
-
+        */
         festivalRepository.save(festival);
         log.info("✅ Festival 저장: {} ({})", festival.getFname(), mt20id);
     }
@@ -141,7 +143,6 @@ public class FestivalService {
         return response.getFestivalDetailList().get(0);
     }
 
-    @Transactional
     public void fetchAndSaveFestivalListAndDetail(String stdate, String eddate) {
         List<String> ids = fetchIdsByPeriod(stdate, eddate);
         log.info("📥 {}~{} ID 수집 완료: {}건", stdate, eddate, ids.size());
