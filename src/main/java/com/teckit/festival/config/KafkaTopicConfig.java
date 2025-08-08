@@ -9,10 +9,10 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaTopicConfig {
 
     @Bean
-    public NewTopic festivalEventTopic() {
-        return TopicBuilder.name("festival-event")
-                .partitions(1)  // 파티션 개수
-                .replicas(1)    // 복제본 개수 (단일 서버면 1)
+    public NewTopic festivalTopic() {
+        return TopicBuilder.name("festival-topic")
+                .partitions(1)
+                .replicas(1)
                 .build();
     }
 }

@@ -22,7 +22,7 @@ public class FestivalKafkaProducer {
         }
         FestivalKafkaDTO dto = detail.toKafkaDTO();
 
-        kafkaTemplate.send("festival-topic", dto)
+        kafkaTemplate.send("festival-event", dto)
                 .whenComplete((result, ex) -> {
                     if (ex == null) {
                         log.info("✅ Kafka 전송 성공: {}", dto);
