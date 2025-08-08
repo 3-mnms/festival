@@ -1,10 +1,10 @@
 package com.teckit.festival.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Getter
@@ -12,37 +12,54 @@ import java.time.LocalDate;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-
 public class Festival {
+
     @Id
-    @Column(unique = true)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;  // 내부 PK
+
+    @OneToOne
+    @JoinColumn(name = "fid", referencedColumnName = "id") // FK → FestivalDetail.id
+    @JsonManagedReference
+    private FestivalDetail festivalDetail;
+
+    @Column
+    private String loginId;
 
     @Column(nullable = false)
     private String fname;
 
-    @Column(nullable = false)
-    private LocalDate fdfrom;
+    // 상세에서는 문자열이므로 이 필드는 nullable로 유지(원하면 파싱해서 set)
+    private String fdfrom;
+    private String fdto;
 
     @Column(nullable = false)
-    private LocalDate fdto;
-
-    @Column(nullable = false)
-    private String poster;
+    private String posterFile;
 
     @Column(nullable = false)
     private String fcltynm;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String area;
 
-    private String genrename;
-
-//    현재 날짜랑 비교해서 자동으로 바뀌게 ?
-//    schedule 설정
+    private String fage;
+    private String genrenm;
     private String fstate;
+    private String faddress;
 
-    @OneToOne(mappedBy = "festival",cascade = CascadeType.ALL,orphanRemoval = true)
-    @JsonBackReference
-    private FestivalDetail festivalDetail;
+    private int ticketPick;
+    private int maxPurchase;
+    private int ticketPrice;
+    private int availableNOP;
+
+    @ElementCollection
+    private List<String> contentFile;
+
+    // 편의 메서드(필요하면)
+    public void setFid(String fid) {
+        if (this.festivalDetail == null) {
+            this.festivalDetail = new FestivalDetail();
+        }
+        this.festivalDetail.setId(fid);
+    }
 }

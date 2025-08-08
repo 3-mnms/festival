@@ -15,13 +15,26 @@ public class FestivalRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-
         int nowMonth = LocalDate.now().getMonthValue(); // 1~12
-        String stdate = String.format("2025%02d01", nowMonth);
-        String eddate = String.format("2025%02d31", nowMonth);
+        int year = LocalDate.now().getYear();
 
-        for(int i=nowMonth;i<=nowMonth+1;i++){
-            festivalService.fetchAndSaveFestivalListAndDetail(stdate,eddate);
+        for (int i = 0; i < 2; i++) { // 이번 달 + 다음 달
+            int targetMonth = nowMonth + i;
+            int targetYear = year;
+
+            if (targetMonth > 12) { // 12월 넘어가면 연도 +1
+                targetMonth -= 12;
+                targetYear += 1;
+            }
+
+            LocalDate startDate = LocalDate.of(targetYear, targetMonth, 1);
+            LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth()); // 말일 계산
+
+            String stdate = startDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String eddate = endDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            festivalService.fetchAndSaveFestivalListAndDetail(stdate, eddate);
         }
     }
+
 }

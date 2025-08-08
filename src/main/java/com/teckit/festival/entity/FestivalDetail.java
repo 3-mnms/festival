@@ -1,69 +1,72 @@
 package com.teckit.festival.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "festival_detail")
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class FestivalDetail {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "fid")
-    @JsonManagedReference
+    @Id
+    @Column(length = 20)
+    private String id;  // 예: PF132236
+
+    @OneToOne(mappedBy = "festivalDetail", cascade = CascadeType.ALL)
+    @JsonBackReference
     private Festival festival;
+
+    @Column(nullable = false)
+    private String loginId;
 
     private String fcltyid;
     private String fname;
-    private String fdfrom;
-    private String fdto;
+    private String fdfrom;   // 문자열 그대로
+    private String fdto;     // 문자열 그대로
     private String fcltynm;
     private String fcast;
 
-    private String fage;
-
-
-    @Column(nullable = false)
-    private int ticketPrice;
-
     @Column(length = 1000)
-    private String poster;
-
-    @Lob
     private String story;
 
+    private int ticketPrice;
     private String genrenm;
     private String fstate;
-
-//
-    private String visit;
-
-//    수용 가능 인원
-    private int availableNOP;
-
     private String updatedate;
-
-
-    private int views=0;
+    private int availableNOP;
+    private int views;
+    private String faddress;
+    private int ticketPick;
+    private int maxPurchase;
+    private String prfage;
+    private String posterFile;
 
     @ElementCollection
-    @CollectionTable(
-            name = "festival_detail_styurls",
-            joinColumns = @JoinColumn(name = "festival_detail_id") // ✅ 확실하게 FK 컬럼 생성
-    )
-    @Column(name="url")
-    private List<String> styurls;
+    private List<String> contentFile;
 
-    @OneToMany(mappedBy = "festivalDetail",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<FestivalSchedule> schedules;
+    @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FestivalSchedule> schedules = new ArrayList<>();
+
+    /** 부모-자식 연관관계 주입 포함해서 안전하게 교체 */
+    public void setSchedules(List<FestivalSchedule> schedules) {
+        if (this.schedules == null) {
+            this.schedules = new ArrayList<>();
+        } else {
+            this.schedules.clear();
+        }
+        if (schedules != null) {
+            for (FestivalSchedule s : schedules) {
+                s.setFestivalDetail(this);
+            }
+            this.schedules.addAll(schedules);
+        }
+    }
 }
