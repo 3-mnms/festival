@@ -2,14 +2,12 @@ package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.request.FestivalRegisterDTO;
 import com.teckit.festival.dto.response.FestivalDTO;
-import com.teckit.festival.entity.Festival;
 import com.teckit.festival.service.FestivalManageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.stream.Collectors;
 
 import java.util.List;
 import java.util.Map;
@@ -25,34 +23,23 @@ public class FestivalManageController {
     @Operation(summary = "공연 등록", description = "공연 기본정보, 상세정보, 일정을 통합 등록합니다.")
     @PostMapping("/host")
     public ResponseEntity<Map<String, Object>> registerFestival(@RequestBody FestivalRegisterDTO request) {
-        String festivalId = manageService.registerFestivalWithDetails(request);
+        String fid = manageService.registerFestivalWithDetails(request);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "🎉 공연 등록 성공",
-                "data", festivalId
+                "data", fid
         ));
     }
 
-    @Operation(summary = "공연 수정", description = "공연 ID를 통해 공연 정보를 수정합니다.")
+    @Operation(summary = "공연 수정", description = "공연 fid(PF000001 등)를 통해 공연 정보를 수정합니다.")
     @PutMapping("/host/{fid}")
     public ResponseEntity<Map<String, Object>> updateFestival(
             @PathVariable String fid,
             @RequestBody FestivalDTO request
     ) {
-        Festival updated = manageService.updateFestival(fid, request);
-        FestivalDTO response = FestivalDTO.builder()
-                .id(updated.getId())
-                .mt20id(updated.getId())
-                .prfnm(updated.getFname())
-                .prfpdfrom(updated.getFdfrom().toString())
-                .prfpdto(updated.getFdto().toString())
-                .fcltynm(updated.getFcltynm())
-                .poster(updated.getPoster())
-                .area(updated.getArea())
-                .genrenm(updated.getGenrenm())
-                .prfstate(updated.getFstate())
-                .build();
-
+        // Service가 엔티티를 업데이트하고, 컨트롤러에서는 DTO로 변환해서 반환
+        var updated = manageService.updateFestival(fid, request);
+        var response = FestivalDTO.fromEntity(updated);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "✏️ 공연 수정 성공",
@@ -60,13 +47,13 @@ public class FestivalManageController {
         ));
     }
 
-    @Operation(summary = "공연 삭제 (주최자)", description = "주최자가 공연을 삭제합니다.")
+    @Operation(summary = "공연 삭제 (주최자)", description = "주최자가 자신의 공연을 삭제합니다.")
     @DeleteMapping("/host/{fid}")
     public ResponseEntity<Map<String, Object>> deleteFestivalByHost(
             @PathVariable String fid,
-            @RequestParam Long hostId
+            @RequestParam String loginId
     ) {
-        manageService.deleteFestivalByHost(fid, hostId);
+        manageService.deleteFestivalByHost(fid, loginId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "🗑️ 공연 삭제 성공"
@@ -75,23 +62,8 @@ public class FestivalManageController {
 
     @Operation(summary = "내 공연 목록 조회 (주최자)", description = "주최자가 등록한 공연 목록을 조회합니다.")
     @GetMapping("/host")
-    public ResponseEntity<Map<String, Object>> getMyFestivals(@RequestParam Long hostId) {
-        List<Festival> list = manageService.getFestivalsByHost(hostId);
-        List<FestivalDTO> responseList = list.stream()
-                .map(f -> FestivalDTO.builder()
-                        .id(f.getId())
-                        .mt20id(f.getId())
-                        .prfnm(f.getFname())
-                        .prfpdfrom(f.getFdfrom().toString())
-                        .prfpdto(f.getFdto().toString())
-                        .fcltynm(f.getFcltynm())
-                        .poster(f.getPoster())
-                        .area(f.getArea())
-                        .genrenm(f.getGenrenm())
-                        .prfstate(f.getFstate())
-                        .build())
-                .collect(Collectors.toList());
-
+    public ResponseEntity<Map<String, Object>> getMyFestivals(@RequestParam String loginId) {
+        List<FestivalDTO> responseList = manageService.getFestivalsByHost(loginId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "📄 내 공연 목록 조회 성공",
@@ -102,20 +74,7 @@ public class FestivalManageController {
     @Operation(summary = "전체 공연 목록 조회 (관리자)", description = "운영자가 전체 공연 목록을 조회합니다.")
     @GetMapping("/admin")
     public ResponseEntity<Map<String, Object>> getAllFestivals() {
-        List<Festival> list = manageService.getAllFestivals();
-        List<FestivalDTO> responseList = list.stream().map(f -> FestivalDTO.builder()
-                .id(f.getId())
-                .mt20id(f.getId())
-                .prfnm(f.getFname())
-                .prfpdfrom(f.getFdfrom().toString())
-                .prfpdto(f.getFdto().toString())
-                .fcltynm(f.getFcltynm())
-                .poster(f.getPoster())
-                .area(f.getArea())
-                .genrenm(f.getGenrenm())
-                .prfstate(f.getFstate())
-                .build()).toList();
-
+        List<FestivalDTO> responseList = manageService.getAllFestivals();
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "📋 전체 공연 목록 조회 성공",
