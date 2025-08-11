@@ -3,10 +3,13 @@ package com.teckit.festival.dto.response;
 import com.teckit.festival.dto.FestivalKafkaDTO;
 import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.util.DateUtil;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.xml.bind.annotation.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Builder
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -113,5 +117,13 @@ public class FestivalDetailDTO {
                 .contentFile(styurls != null ? styurls : new ArrayList<>())
                 .views(0)
                 .build();
+    }
+
+    public String getUpdatedate() {
+        return updatedate;
+    }
+
+    public void setUpdatedate(String updatedate) {
+        this.updatedate = updatedate;
     }
 }

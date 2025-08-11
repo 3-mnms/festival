@@ -31,13 +31,12 @@ public class FestivalManageController {
         ));
     }
 
-    @Operation(summary = "공연 수정", description = "공연 fid(PF000001 등)를 통해 공연 정보를 수정합니다.")
+    @Operation(summary = "공연 수정", description = "공연 fid(PF000001 등)를 통해 공연 기본/상세/일정 정보를 수정합니다.")
     @PutMapping("/host/{fid}")
     public ResponseEntity<Map<String, Object>> updateFestival(
             @PathVariable String fid,
-            @RequestBody FestivalDTO request
+            @RequestBody FestivalRegisterDTO request
     ) {
-        // Service가 엔티티를 업데이트하고, 컨트롤러에서는 DTO로 변환해서 반환
         var updated = manageService.updateFestival(fid, request);
         var response = FestivalDTO.fromEntity(updated);
         return ResponseEntity.ok(Map.of(

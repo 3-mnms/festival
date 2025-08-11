@@ -17,6 +17,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,6 +73,9 @@ public class FestivalManageService {
                 .prfage(detailReq.getPrfage())
                 .posterFile(request.getPosterFile())
                 .contentFile(detailReq.getContentFile())
+                .updatedate(detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
+                        ? detailReq.getUpdatedate()
+                        : LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                 .build();
 
         List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.<FestivalSchedule>of()
@@ -104,33 +109,49 @@ public class FestivalManageService {
 
     // 공연 수정
     @Transactional
-    public Festival updateFestival(String fid, FestivalDTO dto) {
+    public Festival updateFestival(String fid, FestivalRegisterDTO request) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        FestivalDetail detail = festival.getFestivalDetail();
-        if (detail != null) {
-            detail.setFname(dto.getPrfnm());
-            detail.setFdfrom(dto.getPrfpdfrom());
-            detail.setFdto(dto.getPrfpdto());
-            detail.setFcltynm(dto.getFcltynm());
-            detail.setPosterFile(dto.getPoster());
-            detail.setGenrenm(dto.getGenrenm());
-            detail.setFstate(dto.getPrfstate());
-            detail.setPrfage(dto.getPrfage());
-            detail.setTicketPick(Math.max(1, dto.getTicketPick()));
-            detail.setMaxPurchase(Math.max(1, dto.getMaxPurchase()));
-            detail.setTicketPrice(dto.getTicketPrice());
+        var detailReq = request.getDetail();
+        if (detailReq == null) {
+            throw new IllegalArgumentException("detail is required");
         }
 
-        festival.setFname(dto.getPrfnm());
-        festival.setFdfrom(dto.getPrfpdfrom());
-        festival.setFdto(dto.getPrfpdto());
-        festival.setFcltynm(dto.getFcltynm());
-        festival.setPosterFile(dto.getPoster());
-        festival.setGenrenm(dto.getGenrenm());
-        festival.setFstate(dto.getPrfstate());
-        festival.setFage(dto.getPrfage());
+        FestivalDetail detail = festival.getFestivalDetail();
+        detail.setFname(request.getFname());
+        detail.setFdfrom(DateUtil.parseDate(request.getFdfrom()));
+        detail.setFdto(DateUtil.parseDate(request.getFdto()));
+        detail.setFcltynm(request.getFcltynm());
+        detail.setPosterFile(request.getPosterFile());
+        detail.setGenrenm(request.getGenrenm());
+        detail.setFstate("공연예정");
+        detail.setFaddress(detailReq.getFaddress());
+        detail.setTicketPick(Math.max(1, detailReq.getTicketPick()));
+        detail.setMaxPurchase(Math.max(1, detailReq.getMaxPurchase()));
+        detail.setTicketPrice(detailReq.getTicketPrice());
+        detail.setUpdatedate(detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
+                ? detailReq.getUpdatedate()
+                : LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+        // 스케줄 교체
+        List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.<FestivalSchedule>of()
+                : request.getSchedules().stream()
+                .map(s -> FestivalSchedule.builder()
+                        .festivalDetail(detail)
+                        .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek().toUpperCase()))
+                        .time(s.getTime())
+                        .build())
+                .collect(Collectors.toList()));
+        detail.setSchedules(schedules);
+
+        festival.setFname(request.getFname());
+        festival.setFdfrom(DateUtil.parseDate(request.getFdfrom()));
+        festival.setFdto(DateUtil.parseDate(request.getFdto()));
+        festival.setPosterFile(request.getPosterFile());
+        festival.setFcltynm(request.getFcltynm());
+        festival.setGenrenm(request.getGenrenm());
+        festival.setFstate("공연예정");
 
         kafkaProducer.send(festival.getFestivalDetail());
 

@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,6 @@ public class FestivalRegisterDTO {
     @Schema(description = "포스터 이미지 URL", example = "https://example.com/poster.jpg")
     private String posterFile;
 
-    // NOTE: 현재 Festival 엔티티에서 area를 쓰지 않으면 서비스에서 무시됨
     @Schema(description = "공연 지역", example = "서울")
     private String area;
 
@@ -50,6 +50,7 @@ public class FestivalRegisterDTO {
     private List<FestivalScheduleDTO> schedules;
 
     @Getter
+    @Setter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
@@ -80,8 +81,7 @@ public class FestivalRegisterDTO {
         @Min(1) @Max(10)
         private int maxPurchase;
 
-        // ✅ 엔티티는 String이므로 타입을 맞춰두는 걸 추천
-        @Schema(description = "관람 연령(문자열)", example = "만 12세 이상")
+        @Schema(description = "관람 연령", example = "만 12세 이상")
         private String prfage;
 
         @Schema(description = "공연 상태", example = "공연예정")
@@ -94,6 +94,9 @@ public class FestivalRegisterDTO {
         @Schema(description = "상세 이미지 리스트", example = "[\"https://example.com/image1.jpg\"]")
         @Builder.Default
         private List<String> contentFile = new ArrayList<>();
+
+        @Schema(description = "최종 수정일", example = "2025-08-11 10:03:14")
+        private String updatedate; // ✅ 추가됨
     }
 
     @Getter

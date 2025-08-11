@@ -86,12 +86,11 @@ public class FestivalService {
 
         // 2. 업데이트 여부 체크
         Optional<FestivalDetail> existing = festivalDetailRepository.findById(mt20id);
-        /*if (existing.isPresent()
+        if (existing.isPresent()
                 && dto.getUpdatedate() != null
                 && dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
-            log.info("⏭️ 변경 없음 → return");
             return;
-        }*/
+        }
 
         // 3. 가격/좌석수 랜덤 생성
         //log.info("▶ Entity 변환 시작");
