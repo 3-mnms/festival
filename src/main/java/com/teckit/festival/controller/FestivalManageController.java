@@ -15,7 +15,7 @@ import java.util.Map;
 @Tag(name = "공연 관리 API", description = "공연 등록/수정/삭제 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/festivals/manage")
+@RequestMapping("/api/festival/manage")
 public class FestivalManageController {
 
     private final FestivalManageService manageService;
