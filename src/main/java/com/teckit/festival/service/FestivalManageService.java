@@ -15,6 +15,7 @@ import com.teckit.festival.repository.FestivalScheduleRepository;
 import com.teckit.festival.util.DateUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -81,7 +82,7 @@ public class FestivalManageService {
         List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.<FestivalSchedule>of()
                 : request.getSchedules().stream()
                 .map(s -> FestivalSchedule.builder()
-                        .festivalDetail(detail)
+                        .festivalDetail(detail) // 등록 시 festivalDetailId 무시
                         .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek().toUpperCase()))
                         .time(s.getTime())
                         .build())
@@ -100,8 +101,9 @@ public class FestivalManageService {
                 .build();
         detail.setFestival(festival);
 
-        detailRepository.save(detail);
-
+        // ✅ 저장 + flush + Lazy 초기화
+        detailRepository.saveAndFlush(detail); // save 후 flush
+        Hibernate.initialize(detail.getSchedules()); // Lazy 초기화
         kafkaProducer.send(detail);
 
         return fid;
@@ -153,10 +155,14 @@ public class FestivalManageService {
         festival.setGenrenm(request.getGenrenm());
         festival.setFstate("공연예정");
 
+        // ✅ 저장 + flush + Lazy 초기화
+        festivalRepository.saveAndFlush(festival);
+        Hibernate.initialize(festival.getFestivalDetail().getSchedules()); // Lazy 초기화
         kafkaProducer.send(festival.getFestivalDetail());
 
         return festivalRepository.save(festival);
     }
+
 
     // 공연 삭제 (주최자)
     @Transactional

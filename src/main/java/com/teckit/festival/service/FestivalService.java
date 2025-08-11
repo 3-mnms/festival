@@ -2,6 +2,7 @@ package com.teckit.festival.service;
 
 import com.teckit.festival.kafka.FestivalKafkaProducer;
 import com.teckit.festival.util.DateUtil;
+import org.hibernate.Hibernate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.teckit.festival.dto.response.FestivalDetailDTO;
@@ -68,8 +69,6 @@ public class FestivalService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void fetchAndSaveFestivalDetail(String mt20id) {
-        //log.info("▶ 메서드 진입: fetchAndSaveFestivalDetail({})", mt20id);
-
         if (mt20id == null || mt20id.isBlank()) {
             log.warn("⚠️ mt20id 비어있음 → return");
             return;
@@ -77,46 +76,60 @@ public class FestivalService {
 
         // 1. 상세 API 호출
         FestivalDetailDTO dto = fetchFestivalDetail(mt20id);
-        //log.info("▶ 상세 API 호출 완료: dto={}", dto != null ? "있음" : "없음");
-
         if (dto == null) {
             log.warn("⚠️ 상세 없음: {} → return", mt20id);
             return;
         }
 
-        // 2. 업데이트 여부 체크
-        Optional<FestivalDetail> existing = festivalDetailRepository.findById(mt20id);
+        // 2. 기존 데이터 schedules까지 fetch join으로 로딩
+        Optional<FestivalDetail> existing = festivalDetailRepository.findByIdWithSchedules(mt20id);
+
+        // 3. 업데이트 필요 여부 체크
         if (existing.isPresent()
                 && dto.getUpdatedate() != null
                 && dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
             return;
         }
 
-        // 3. 가격/좌석수 랜덤 생성
-        //log.info("▶ Entity 변환 시작");
-        int price = FestivalScheduleGenerator.generateRandomPrice();
-        int nop = FestivalScheduleGenerator.generateRandomAvailableNOP();
+        // 4. 가격/좌석수 보정
+        int price = (dto.getTicketPrice() > 0) ? dto.getTicketPrice()
+                : FestivalScheduleGenerator.generateRandomPrice();
+        int nop = (dto.getAvailableNOP() > 0) ? dto.getAvailableNOP()
+                : FestivalScheduleGenerator.generateRandomAvailableNOP();
 
-        // 4. Entity 변환 + 일정 생성
+        // 5. Entity 변환
         FestivalDetail detail = dto.toEntity(price, nop);
-        List<FestivalSchedule> schedules = FestivalScheduleGenerator.generateRandomSchedules(detail);
-        detail.setSchedules(schedules);
 
-        // 5. DB 저장
-        festivalDetailRepository.save(detail);
-        //log.info("✅ FestivalDetail 저장: {}", detail.getId());
-
-        // 6. Kafka 전송
-        try {
-            festivalKafkaProducer.send(detail);
-            //log.info("📤 Kafka 전송 시도: {}", detail.getId());
-        } catch (Exception e) {
-            log.error("❌ Kafka 전송 실패: {}", detail.getId(), e);
+        // 6. 스케줄 설정 (기존 복사 or 랜덤 생성)
+        if (detail.getSchedules() == null || detail.getSchedules().isEmpty()) {
+            if (existing.isPresent() && existing.get().getSchedules() != null && !existing.get().getSchedules().isEmpty()) {
+                List<FestivalSchedule> copySchedules = new ArrayList<>();
+                for (FestivalSchedule s : existing.get().getSchedules()) {
+                    copySchedules.add(FestivalSchedule.builder()
+                            .festivalDetail(detail)
+                            .dayOfWeek(s.getDayOfWeek())
+                            .time(s.getTime())
+                            .build());
+                }
+                detail.setSchedules(copySchedules);
+            } else {
+                detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail));
+            }
         }
 
-        // 7. Festival(읽기 전용) 저장/갱신
+        // 7. 저장
+        festivalDetailRepository.saveAndFlush(detail);
+
+        // 8. 재조회하여 PK가 채워진 schedules 가져오기
+        FestivalDetail savedDetail = festivalDetailRepository.findByIdWithSchedules(detail.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+
+        // 9. Kafka 전송
+        festivalKafkaProducer.send(savedDetail);
+
+        // 10. Festival 테이블 갱신
         Festival festival = festivalRepository.findByFestivalDetail_Id(mt20id)
-                .orElse(Festival.builder().festivalDetail(detail).build());
+                .orElse(Festival.builder().festivalDetail(savedDetail).build());
 
         festival.setFname(dto.getPrfnm());
         festival.setFdfrom(DateUtil.parseDate(dto.getPrfpdfrom()));
