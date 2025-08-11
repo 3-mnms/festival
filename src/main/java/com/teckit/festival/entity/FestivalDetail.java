@@ -35,7 +35,7 @@ public class FestivalDetail {
     private String fcltynm;
     private String fcast;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String story;
 
     private int ticketPrice;
@@ -72,42 +72,29 @@ public class FestivalDetail {
     /** Kafka DTO 변환 메서드 - null 안전 처리 포함 */
     /** Kafka 전송용 변환 메서드 */
     public FestivalKafkaDTO toKafkaDTO() {
-        List<String> scheduleStrings = (this.schedules == null) ? new ArrayList<>() :
-                this.schedules.stream()
-                        .map(s -> s.getDayOfWeek() + " " + s.getTime())
+        List<FestivalKafkaDTO.ScheduleDTO> scheduleList =
+                (this.schedules == null)
+                        ? new ArrayList<>()
+                        : this.schedules.stream()
+                        .map(s -> FestivalKafkaDTO.ScheduleDTO.builder()
+                                .scheduleId(s.getId())                // PK
+                                .dayOfWeek(s.getDayOfWeek().name())    // Enum → String
+                                .time(s.getTime())                     // "12:00"
+                                .build())
                         .collect(Collectors.toList());
 
         return FestivalKafkaDTO.builder()
-                .id(this.id) //
-                .loginId(this.loginId)
-                /*.loginId(this.loginId != null ? this.loginId
-                        : (this.festival != null ? this.festival.getLoginId() : null))*/
-                /*.fname(this.fname != null ? this.fname
-                        : (this.festival != null ? this.festival.getFname() : null))
-                .fdfrom(this.fdfrom != null ? this.fdfrom
-                        : (this.festival != null ? this.festival.getFdfrom() : null))
-                .fdto(this.fdto != null ? this.fdto
-                        : (this.festival != null ? this.festival.getFdto() : null))
-                .posterFile(this.posterFile != null ? this.posterFile
-                        : (this.festival != null ? this.festival.getPosterFile() : null))
-                .fcltynm(this.fcltynm)
-                .genrenm(this.genrenm != null ? this.genrenm
-                        : (this.festival != null ? this.festival.getGenrenm() : null))*/
+                .id(this.id)
                 .fname(this.fname)
                 .fdfrom(this.fdfrom)
                 .fdto(this.fdto)
                 .posterFile(this.posterFile)
                 .fcltynm(this.fcltynm)
-                .genrenm(this.genrenm)
-                .fstate(this.fstate)
-
-                .faddress(this.faddress)
-                .prfage(this.prfage)
                 .ticketPick(this.ticketPick)
                 .maxPurchase(this.maxPurchase)
                 .ticketPrice(this.ticketPrice)
                 .availableNOP(this.availableNOP)
-                .schedules(scheduleStrings)
+                .schedules(scheduleList) // 객체 리스트로 변경
                 .build();
     }
 }

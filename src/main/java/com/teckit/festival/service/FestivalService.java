@@ -1,5 +1,6 @@
 package com.teckit.festival.service;
 
+import com.teckit.festival.kafka.FestivalKafkaProducer;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.teckit.festival.dto.response.FestivalDetailDTO;
@@ -39,6 +40,8 @@ public class FestivalService {
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository festivalDetailRepository;
     private final RestClient restClient;
+    private final FestivalKafkaProducer festivalKafkaProducer;
+
 
     @Value("${festival-api-key}")
     private String festivalApiKey;
@@ -64,38 +67,54 @@ public class FestivalService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void fetchAndSaveFestivalDetail(String mt20id) {
+        //log.info("▶ 메서드 진입: fetchAndSaveFestivalDetail({})", mt20id);
+
         if (mt20id == null || mt20id.isBlank()) {
-            log.warn("⚠️ mt20id 비어있음");
+            log.warn("⚠️ mt20id 비어있음 → return");
             return;
         }
 
-        // 상세 API 호출
+        // 1. 상세 API 호출
         FestivalDetailDTO dto = fetchFestivalDetail(mt20id);
+        //log.info("▶ 상세 API 호출 완료: dto={}", dto != null ? "있음" : "없음");
+
         if (dto == null) {
-            log.warn("⚠️ 상세 없음: {}", mt20id);
+            log.warn("⚠️ 상세 없음: {} → return", mt20id);
             return;
         }
 
-        // 업데이트 여부 체크
+        // 2. 업데이트 여부 체크
         Optional<FestivalDetail> existing = festivalDetailRepository.findById(mt20id);
-        if (existing.isPresent() &&
-                dto.getUpdatedate() != null &&
-                dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
-            //log.info("⏭️ 변경 없음: {}", mt20id);
+        /*if (existing.isPresent()
+                && dto.getUpdatedate() != null
+                && dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
+            log.info("⏭️ 변경 없음 → return");
             return;
-        }
+        }*/
 
+        // 3. 가격/좌석수 랜덤 생성
+        //log.info("▶ Entity 변환 시작");
         int price = FestivalScheduleGenerator.generateRandomPrice();
         int nop = FestivalScheduleGenerator.generateRandomAvailableNOP();
 
+        // 4. Entity 변환 + 일정 생성
         FestivalDetail detail = dto.toEntity(price, nop);
         List<FestivalSchedule> schedules = FestivalScheduleGenerator.generateRandomSchedules(detail);
         detail.setSchedules(schedules);
 
+        // 5. DB 저장
         festivalDetailRepository.save(detail);
-        log.info("✅ FestivalDetail 저장: {}", detail.getId());
+        //log.info("✅ FestivalDetail 저장: {}", detail.getId());
 
-        // Festival(읽기 전용)
+        // 6. Kafka 전송
+        try {
+            festivalKafkaProducer.send(detail);
+            //log.info("📤 Kafka 전송 시도: {}", detail.getId());
+        } catch (Exception e) {
+            log.error("❌ Kafka 전송 실패: {}", detail.getId(), e);
+        }
+
+        // 7. Festival(읽기 전용) 저장/갱신
         Festival festival = festivalRepository.findByFestivalDetail_Id(mt20id)
                 .orElse(Festival.builder().festivalDetail(detail).build());
 
@@ -107,13 +126,7 @@ public class FestivalService {
         festival.setGenrenm(dto.getGenrenm());
         festival.setFstate(dto.getPrfstate());
         festival.setFage(dto.getPrfage());
-        //festival.setLoginId(dto.getLoginId() != null ? dto.getLoginId() : "SYSTEM");
-        /*
-        festival.setTicketPick(dto.getTicketPick());
-        festival.setMaxPurchase(dto.getMaxPurchase());
-        festival.setTicketPrice(price);
-        festival.setAvailableNOP(nop);
-        */
+
         festivalRepository.save(festival);
         log.info("✅ Festival 저장: {} ({})", festival.getFname(), mt20id);
     }
@@ -136,8 +149,12 @@ public class FestivalService {
                 .queryParam("service", festivalApiKey)
                 .toUriString();
 
-        FestivalDetailListDTO response = fetchAndParseXml(restClient, uri, FestivalDetailListDTO.class);
-        if (response == null || response.getFestivalDetailList() == null || response.getFestivalDetailList().isEmpty()) {
+        FestivalDetailListDTO response =
+                fetchAndParseXml(restClient, uri, FestivalDetailListDTO.class);
+
+        if (response == null
+                || response.getFestivalDetailList() == null
+                || response.getFestivalDetailList().isEmpty()) {
             return null;
         }
         return response.getFestivalDetailList().get(0);
