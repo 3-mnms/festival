@@ -48,7 +48,7 @@ public class FestivalDetail {
     private String genrenm;
     private String fstate;
     @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private String updatedate;
+    private LocalDateTime updatedate;
     private int availableNOP;
     private int views;
     private String faddress;

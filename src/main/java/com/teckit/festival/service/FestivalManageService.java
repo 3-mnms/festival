@@ -23,11 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.teckit.festival.kafka.FestivalKafkaProducer;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class FestivalManageService {
@@ -35,9 +30,7 @@ public class FestivalManageService {
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository detailRepository;
     private final FestivalScheduleRepository scheduleRepository;
-
     private final FestivalKafkaProducer kafkaProducer;
-
 
     // 공연 등록 (기본정보 + 상세정보 + 일정)
     @Transactional
@@ -74,9 +67,14 @@ public class FestivalManageService {
                 .prfage(detailReq.getPrfage())
                 .posterFile(request.getPosterFile())
                 .contentFile(detailReq.getContentFile())
-                .updatedate(detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
-                        ? detailReq.getUpdatedate()
-                        : LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                .updatedate(
+                        detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
+                                ? LocalDateTime.parse(
+                                detailReq.getUpdatedate().substring(0, 19),
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                        )
+                                : LocalDateTime.now()
+                )
                 .build();
 
         List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.<FestivalSchedule>of()
@@ -102,8 +100,8 @@ public class FestivalManageService {
         detail.setFestival(festival);
 
         // ✅ 저장 + flush + Lazy 초기화
-        detailRepository.saveAndFlush(detail); // save 후 flush
-        Hibernate.initialize(detail.getSchedules()); // Lazy 초기화
+        detailRepository.saveAndFlush(detail);
+        Hibernate.initialize(detail.getSchedules());
         kafkaProducer.send(detail);
 
         return fid;
@@ -132,11 +130,15 @@ public class FestivalManageService {
         detail.setTicketPick(Math.max(1, detailReq.getTicketPick()));
         detail.setMaxPurchase(Math.max(1, detailReq.getMaxPurchase()));
         detail.setTicketPrice(detailReq.getTicketPrice());
-        detail.setUpdatedate(detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
-                ? detailReq.getUpdatedate()
-                : LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        detail.setUpdatedate(
+                detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
+                        ? LocalDateTime.parse(
+                        detailReq.getUpdatedate().substring(0, 19),
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                )
+                        : LocalDateTime.now()
+        );
 
-        // 스케줄 교체
         List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.<FestivalSchedule>of()
                 : request.getSchedules().stream()
                 .map(s -> FestivalSchedule.builder()
@@ -157,12 +159,11 @@ public class FestivalManageService {
 
         // ✅ 저장 + flush + Lazy 초기화
         festivalRepository.saveAndFlush(festival);
-        Hibernate.initialize(festival.getFestivalDetail().getSchedules()); // Lazy 초기화
+        Hibernate.initialize(festival.getFestivalDetail().getSchedules());
         kafkaProducer.send(festival.getFestivalDetail());
 
         return festivalRepository.save(festival);
     }
-
 
     // 공연 삭제 (주최자)
     @Transactional
@@ -174,17 +175,11 @@ public class FestivalManageService {
             throw new BusinessException(ErrorCode.NO_AUTHORITY);
         }
 
-        // 1) Festival 먼저 삭제 (FK가 Festival 쪽이라 먼저 지워도 OK)
         festivalRepository.delete(festival);
-
-        // 2) Detail 삭제
         detailRepository.deleteById(fid);
     }
 
-
-    /**
-     * 주최자 공연 목록 조회
-     */
+    // 주최자 공연 목록 조회
     public List<FestivalDTO> getFestivalsByHost(String loginId) {
         return festivalRepository.findByFestivalDetail_LoginId(loginId)
                 .stream()
@@ -192,9 +187,7 @@ public class FestivalManageService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 전체 공연 목록 조회 (관리자)
-     */
+    // 전체 공연 목록 조회 (관리자)
     public List<FestivalDTO> getAllFestivals() {
         return festivalRepository.findAll()
                 .stream()
@@ -202,9 +195,7 @@ public class FestivalManageService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 공연 삭제 (관리자)
-     */
+    // 공연 삭제 (관리자)
     @Transactional
     public void adminDeleteFestival(String fid) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
@@ -213,9 +204,7 @@ public class FestivalManageService {
         festivalRepository.delete(festival);
     }
 
-    /**
-     * fid(PF000001) 자동 생성
-     */
+    // fid(PF000001) 자동 생성
     private String generateUniqueFid() {
         String fid;
         do {

@@ -11,6 +11,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -94,13 +96,23 @@ public class FestivalDetailDTO {
         int finalAvailableNOP = Math.max(0, availableNOP);
         int finalTicketPrice  = ticketPrice;
 
+        LocalDateTime updatedDateTime;
+        if (this.updatedate != null && !this.updatedate.isBlank()) {
+            String cleaned = this.updatedate.contains(".")
+                    ? this.updatedate.substring(0, this.updatedate.indexOf("."))
+                    : this.updatedate;
+            updatedDateTime = LocalDateTime.parse(cleaned, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } else {
+            updatedDateTime = LocalDateTime.now();
+        }
+
         return FestivalDetail.builder()
                 .id(mt20id)
                 .loginId(this.loginId != null ? this.loginId : "SYSTEM")
                 .fcltyid(mt10id)
                 .fname(prfnm)
-                .fdfrom(DateUtil.parseDate(this.prfpdfrom)) // String → LocalDate
-                .fdto(DateUtil.parseDate(this.prfpdto))     // String → LocalDate
+                .fdfrom(DateUtil.parseDate(this.prfpdfrom))
+                .fdto(DateUtil.parseDate(this.prfpdto))
                 .fcltynm(fcltynm)
                 .fcast(prfcast)
                 .prfage(this.prfage)
@@ -109,7 +121,7 @@ public class FestivalDetailDTO {
                 .availableNOP(finalAvailableNOP)
                 .genrenm(genrenm)
                 .fstate(prfstate)
-                .updatedate(updatedate)
+                .updatedate(updatedDateTime) // **변경된 부분**
                 .faddress(faddress)
                 .ticketPick(safeTicketPick)
                 .maxPurchase(safeMaxPurchase)
