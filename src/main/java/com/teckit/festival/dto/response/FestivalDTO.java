@@ -3,6 +3,8 @@ package com.teckit.festival.dto.response;
 import com.teckit.festival.entity.Festival;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter
 @Builder
 @NoArgsConstructor
@@ -10,8 +12,8 @@ import lombok.*;
 public class FestivalDTO {
     private String mt20id;       // FestivalDetail.id
     private String prfnm;        // 공연명
-    private String prfpdfrom;    // 시작일
-    private String prfpdto;      // 종료일
+    private LocalDate prfpdfrom;    // 시작일
+    private LocalDate prfpdto;      // 종료일
     private String fcltynm;      // 장소명
     private String poster;       // 썸네일
     //private String area;         // 지역

@@ -1,15 +1,14 @@
 package com.teckit.festival.enumeration;
 
 public enum FestivalScheduleDay {
-//    MON은
     MON("월"),
     TUE("화"),
     WED("수"),
     THU("목"),
     FRI("금"),
     SAT("토"),
-    SUN("일"),
-    HOL("공휴일");
+    SUN("일");
+    //HOL("공휴일");
 
     private final String label;
 

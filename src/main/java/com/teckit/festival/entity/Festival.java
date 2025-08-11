@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Setter
@@ -28,8 +30,8 @@ public class Festival {
     private String fname; // 공연명
 
     // 기간
-    private String fdfrom;
-    private String fdto;
+    private LocalDate fdfrom;
+    private LocalDate fdto;
 
     @Column(nullable = false)
     private String posterFile; // 썸네일

@@ -1,6 +1,7 @@
 package com.teckit.festival.service;
 
 import com.teckit.festival.kafka.FestivalKafkaProducer;
+import com.teckit.festival.util.DateUtil;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.teckit.festival.dto.response.FestivalDetailDTO;
@@ -119,8 +120,8 @@ public class FestivalService {
                 .orElse(Festival.builder().festivalDetail(detail).build());
 
         festival.setFname(dto.getPrfnm());
-        festival.setFdfrom(dto.getPrfpdfrom());
-        festival.setFdto(dto.getPrfpdto());
+        festival.setFdfrom(DateUtil.parseDate(dto.getPrfpdfrom()));
+        festival.setFdto(DateUtil.parseDate(dto.getPrfpdto()));
         festival.setPosterFile(dto.getPoster());
         festival.setFcltynm(dto.getFcltynm());
         festival.setGenrenm(dto.getGenrenm());
@@ -128,7 +129,6 @@ public class FestivalService {
         festival.setFage(dto.getPrfage());
 
         festivalRepository.save(festival);
-        log.info("✅ Festival 저장: {} ({})", festival.getFname(), mt20id);
     }
 
     @Transactional

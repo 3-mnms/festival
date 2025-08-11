@@ -16,7 +16,7 @@ public class FestivalScheduleDTO {
     @Schema(description = "공연 상세정보 ID", example = "1")
     private Long festivalDetailId;
 
-    @Schema(description = "요일 (MON, TUE, WED, THU, FRI, SAT, SUN, HOL)", example = "MON")
+    @Schema(description = "요일 (MON, TUE, WED, THU, FRI, SAT, SUN)", example = "MON")
     private String dayOfWeek;
 
     @Schema(description = "공연 시간", example = "18:00")

@@ -12,6 +12,7 @@ import com.teckit.festival.kafka.FestivalKafkaProducer;
 import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.repository.FestivalScheduleRepository;
+import com.teckit.festival.util.DateUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,9 +35,8 @@ public class FestivalManageService {
 
     private final FestivalKafkaProducer kafkaProducer;
 
-    /**
-     * 공연 등록 (기본정보 + 상세정보 + 일정)
-     */
+
+    // 공연 등록 (기본정보 + 상세정보 + 일정)
     @Transactional
     public String registerFestivalWithDetails(FestivalRegisterDTO request) {
         String fid = generateUniqueFid();
@@ -55,8 +55,8 @@ public class FestivalManageService {
                 .loginId(request.getLoginId())
                 .fcltyid(detailReq.getFcltyid())
                 .fname(request.getFname())
-                .fdfrom(request.getFdfrom())
-                .fdto(request.getFdto())
+                .fdfrom(DateUtil.parseDate(request.getFdfrom()))
+                .fdto(DateUtil.parseDate(request.getFdto()))
                 .fcltynm(request.getFcltynm())
                 .fcast(detailReq.getFcast())
                 .story(detailReq.getStory())
@@ -84,10 +84,9 @@ public class FestivalManageService {
         detail.setSchedules(schedules);
 
         Festival festival = Festival.builder()
-                //.loginId(request.getLoginId())   // ✅ 필수
                 .fname(request.getFname())
-                .fdfrom(request.getFdfrom())
-                .fdto(request.getFdto())
+                .fdfrom(DateUtil.parseDate(request.getFdfrom()))
+                .fdto(DateUtil.parseDate(request.getFdto()))
                 .posterFile(request.getPosterFile())
                 .fcltynm(request.getFcltynm())
                 .genrenm(request.getGenrenm())
@@ -103,9 +102,7 @@ public class FestivalManageService {
         return fid;
     }
 
-    /**
-     * 공연 수정
-     */
+    // 공연 수정
     @Transactional
     public Festival updateFestival(String fid, FestivalDTO dto) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
@@ -135,15 +132,12 @@ public class FestivalManageService {
         festival.setFstate(dto.getPrfstate());
         festival.setFage(dto.getPrfage());
 
-        // 선택: 수정 후 카프카 전송
         kafkaProducer.send(festival.getFestivalDetail());
 
         return festivalRepository.save(festival);
     }
 
-    /**
-     * 공연 삭제 (주최자)
-     */
+    // 공연 삭제 (주최자)
     @Transactional
     public void deleteFestivalByHost(String fid, String loginId) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)

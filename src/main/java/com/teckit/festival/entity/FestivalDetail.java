@@ -5,6 +5,7 @@ import com.teckit.festival.dto.FestivalKafkaDTO;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,8 +31,10 @@ public class FestivalDetail {
 
     private String fcltyid;
     private String fname;
-    private String fdfrom;
-    private String fdto;
+    private LocalDate fdfrom;
+    private LocalDate fdto;
+    //private String fdfrom;
+    //private String fdto;
     private String fcltynm;
     private String fcast;
 

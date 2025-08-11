@@ -2,6 +2,7 @@ package com.teckit.festival.dto.response;
 
 import com.teckit.festival.dto.FestivalKafkaDTO;
 import com.teckit.festival.entity.FestivalDetail;
+import com.teckit.festival.util.DateUtil;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.xml.bind.annotation.*;
@@ -94,8 +95,8 @@ public class FestivalDetailDTO {
                 .loginId(this.loginId != null ? this.loginId : "SYSTEM")
                 .fcltyid(mt10id)
                 .fname(prfnm)
-                .fdfrom(prfpdfrom)
-                .fdto(prfpdto)
+                .fdfrom(DateUtil.parseDate(this.prfpdfrom)) // String → LocalDate
+                .fdto(DateUtil.parseDate(this.prfpdto))     // String → LocalDate
                 .fcltynm(fcltynm)
                 .fcast(prfcast)
                 .prfage(this.prfage)

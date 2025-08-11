@@ -2,6 +2,7 @@ package com.teckit.festival.dto;
 
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter @Setter @Builder
@@ -9,8 +10,8 @@ import java.util.List;
 public class FestivalKafkaDTO {
     private String id;           // PF000001
     private String fname;
-    private String fdfrom;
-    private String fdto;
+    private LocalDate fdfrom;
+    private LocalDate fdto;
     private String posterFile;
     private String fcltynm;
     private int ticketPick;
