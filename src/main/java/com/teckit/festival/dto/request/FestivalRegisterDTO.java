@@ -19,8 +19,8 @@ import java.util.List;
 @Schema(description = "공연 등록 요청 DTO")
 public class FestivalRegisterDTO {
 
-    @Schema(description = "주최자 ID", example = "host01")
-    private String loginId;
+    //@Schema(description = "주최자 ID", example = "host01")
+    //private String loginId;
 
     @Schema(description = "공연명", example = "뮤지컬 캣츠")
     private String fname;

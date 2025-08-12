@@ -20,10 +20,24 @@ public class FestivalManageController {
 
     private final FestivalManageService manageService;
 
-    @Operation(summary = "공연 등록", description = "공연 기본정보, 상세정보, 일정을 통합 등록합니다.")
+    /*@Operation(summary = "공연 등록", description = "공연 기본정보, 상세정보, 일정을 통합 등록합니다.")
     @PostMapping("/host")
     public ResponseEntity<Map<String, Object>> registerFestival(@RequestBody FestivalRegisterDTO request) {
         String fid = manageService.registerFestivalWithDetails(request);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "🎉 공연 등록 성공",
+                "data", fid
+        ));
+    }*/
+
+    @Operation(summary = "공연 등록", description = "공연 기본정보, 상세정보, 일정을 통합 등록합니다.")
+    @PostMapping("/host")
+    public ResponseEntity<Map<String, Object>> registerFestival(
+            @RequestHeader("X-Login-Id") String loginId,  // ** Long.parseLong() 제거, String 그대로 받기 **
+            @RequestBody FestivalRegisterDTO request
+    ) {
+        String fid = manageService.registerFestivalWithDetails(request, loginId); // ** 서비스에도 String 전달 **
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "🎉 공연 등록 성공",
@@ -34,10 +48,11 @@ public class FestivalManageController {
     @Operation(summary = "공연 수정", description = "공연 fid(PF000001 등)를 통해 공연 기본/상세/일정 정보를 수정합니다.")
     @PutMapping("/host/{fid}")
     public ResponseEntity<Map<String, Object>> updateFestival(
+            @RequestHeader("X-Login-Id") String loginId,  // ** 헤더에서 로그인ID 받기 추가 **
             @PathVariable String fid,
             @RequestBody FestivalRegisterDTO request
     ) {
-        var updated = manageService.updateFestival(fid, request);
+        var updated = manageService.updateFestival(fid, request, loginId); // ** 서비스에 String loginId 전달 **
         var response = FestivalDTO.fromEntity(updated);
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -49,10 +64,10 @@ public class FestivalManageController {
     @Operation(summary = "공연 삭제 (주최자)", description = "주최자가 자신의 공연을 삭제합니다.")
     @DeleteMapping("/host/{fid}")
     public ResponseEntity<Map<String, Object>> deleteFestivalByHost(
-            @PathVariable String fid,
-            @RequestParam String loginId
+            @RequestHeader("X-Login-Id") String loginId,  // ** RequestParam → RequestHeader **
+            @PathVariable String fid
     ) {
-        manageService.deleteFestivalByHost(fid, loginId);
+        manageService.deleteFestivalByHost(fid, loginId); // ** String loginId 전달 **
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "🗑️ 공연 삭제 성공"

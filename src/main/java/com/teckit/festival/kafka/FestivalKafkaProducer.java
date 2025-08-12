@@ -25,7 +25,7 @@ public class FestivalKafkaProducer {
         kafkaTemplate.send("festival-topic", dto)
                 .whenComplete((result, ex) -> {
                     if (ex == null) {
-                        log.info("✅ Kafka 전송 성공: {}", dto);
+                        //log.info("✅ Kafka 전송 성공: {}", dto);
                     } else {
                         log.error("❌ Kafka 전송 실패: {}", dto, ex);
                     }

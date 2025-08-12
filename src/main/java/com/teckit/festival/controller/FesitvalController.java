@@ -22,7 +22,7 @@ import java.util.List;
 @Tag(name = "공연 조회 API", description = "공연 목록 / 상세 / 카테고리 / 검색 / 조회수 API")
 @RestController
 @AllArgsConstructor
-@RequestMapping("api/festival")
+@RequestMapping("/api/festival")
 public class FesitvalController {
 
     private final FestivalService festivalService;

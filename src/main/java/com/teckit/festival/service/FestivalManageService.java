@@ -34,7 +34,7 @@ public class FestivalManageService {
 
     // 공연 등록 (기본정보 + 상세정보 + 일정)
     @Transactional
-    public String registerFestivalWithDetails(FestivalRegisterDTO request) {
+    public String registerFestivalWithDetails(FestivalRegisterDTO request, String loginId) { // ** (파라미터에 loginId 추가) **
         String fid = generateUniqueFid();
 
         var detailReq = request.getDetail();
@@ -48,7 +48,7 @@ public class FestivalManageService {
 
         FestivalDetail detail = FestivalDetail.builder()
                 .id(fid)
-                .loginId(request.getLoginId())
+                .loginId(loginId) // ** (클라이언트 바디가 아닌 헤더에서 받은 loginId 사용) **
                 .fcltyid(detailReq.getFcltyid())
                 .fname(request.getFname())
                 .fdfrom(DateUtil.parseDate(request.getFdfrom()))
@@ -109,9 +109,14 @@ public class FestivalManageService {
 
     // 공연 수정
     @Transactional
-    public Festival updateFestival(String fid, FestivalRegisterDTO request) {
+    public Festival updateFestival(String fid, FestivalRegisterDTO request, String loginId) { // ** (파라미터에 loginId 추가) **
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+
+        // 본인 소유 공연인지 확인
+        if (!festival.getFestivalDetail().getLoginId().equals(loginId)) { // ** (권한 체크 추가) **
+            throw new BusinessException(ErrorCode.NO_AUTHORITY);
+        }
 
         var detailReq = request.getDetail();
         if (detailReq == null) {
