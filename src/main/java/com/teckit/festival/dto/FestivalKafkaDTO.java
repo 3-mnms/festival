@@ -8,6 +8,7 @@ import java.util.List;
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 public class FestivalKafkaDTO {
+    private String eventType;    // e.g. "FESTIVAL_CREATED" / "FESTIVAL_UPDATED" / "FESTIVAL_DELETED"
     private String id;           // PF000001
     private String fname;
     private LocalDate fdfrom;

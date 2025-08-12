@@ -125,7 +125,7 @@ public class FestivalService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         // 9. Kafka 전송
-        festivalKafkaProducer.send(savedDetail);
+        festivalKafkaProducer.send(savedDetail, "FESTIVAL_CREATED");
 
         // 10. Festival 테이블 갱신
         Festival festival = festivalRepository.findByFestivalDetail_Id(mt20id)

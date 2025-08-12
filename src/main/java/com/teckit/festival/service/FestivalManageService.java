@@ -48,7 +48,7 @@ public class FestivalManageService {
 
         FestivalDetail detail = FestivalDetail.builder()
                 .id(fid)
-                .loginId(loginId) // ** (클라이언트 바디가 아닌 헤더에서 받은 loginId 사용) **
+                .loginId(loginId)
                 .fcltyid(detailReq.getFcltyid())
                 .fname(request.getFname())
                 .fdfrom(DateUtil.parseDate(request.getFdfrom()))
@@ -99,10 +99,10 @@ public class FestivalManageService {
                 .build();
         detail.setFestival(festival);
 
-        // ✅ 저장 + flush + Lazy 초기화
         detailRepository.saveAndFlush(detail);
         Hibernate.initialize(detail.getSchedules());
-        kafkaProducer.send(detail);
+
+        kafkaProducer.send(detail, "FESTIVAL_CREATED");
 
         return fid;
     }
@@ -162,10 +162,10 @@ public class FestivalManageService {
         festival.setGenrenm(request.getGenrenm());
         festival.setFstate("공연예정");
 
-        // ✅ 저장 + flush + Lazy 초기화
         festivalRepository.saveAndFlush(festival);
         Hibernate.initialize(festival.getFestivalDetail().getSchedules());
-        kafkaProducer.send(festival.getFestivalDetail());
+
+        kafkaProducer.send(festival.getFestivalDetail(), "FESTIVAL_UPDATED");
 
         return festivalRepository.save(festival);
     }
@@ -176,9 +176,12 @@ public class FestivalManageService {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        if (!festival.getFestivalDetail().getLoginId().equals(loginId)) {
+        String owner = festival.getFestivalDetail().getLoginId();
+        if (!owner.equals(loginId)) {
             throw new BusinessException(ErrorCode.NO_AUTHORITY);
         }
+
+        kafkaProducer.sendDeleted(fid);
 
         festivalRepository.delete(festival);
         detailRepository.deleteById(fid);
@@ -206,7 +209,12 @@ public class FestivalManageService {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
+        String owner = festival.getFestivalDetail().getLoginId();
+
+        kafkaProducer.sendDeleted(fid);
+
         festivalRepository.delete(festival);
+        detailRepository.deleteById(fid);
     }
 
     // fid(PF000001) 자동 생성
