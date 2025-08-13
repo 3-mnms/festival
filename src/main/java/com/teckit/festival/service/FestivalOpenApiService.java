@@ -13,7 +13,7 @@ public class FestivalOpenApiService {
 
     private final RestClient restClient;
 
-    // ✅ 환경변수 키를 예전 방식으로 통일
+
     @Value("${festival-api-key}")
     private String festivalApiKey;
 
@@ -22,7 +22,7 @@ public class FestivalOpenApiService {
      */
     public String getFestivalList(String stdate, String eddate) {
         String uri = UriComponentsBuilder.fromPath("")
-                .queryParam("service", festivalApiKey) // ✅ API 문서에 맞춘 파라미터명
+                .queryParam("service", festivalApiKey)
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")

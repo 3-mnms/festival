@@ -11,7 +11,7 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
     List<Festival> findByFnameContaining(String keyword);
     List<Festival> findByGenrenmAndFnameContaining(String genre, String keyword);
     Optional<Festival> findByFestivalDetail_Id(String fid);
-    List<Festival> findByFestivalDetail_LoginId(String loginId);
+    List<Festival> findByFestivalDetail_UserId(Long userId);
     boolean existsByFestivalDetail_Id(String id);
 }
 

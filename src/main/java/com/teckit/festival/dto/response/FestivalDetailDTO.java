@@ -78,7 +78,7 @@ public class FestivalDetailDTO {
     private List<String> styurls;
 
     // 내부 전용 필드
-    private String loginId;
+    private Long userId;
     private String faddress;
     @Min(1) @Max(3)
     private int ticketPick;
@@ -108,7 +108,7 @@ public class FestivalDetailDTO {
 
         return FestivalDetail.builder()
                 .id(mt20id)
-                .loginId(this.loginId != null ? this.loginId : "SYSTEM")
+                .userId(this.userId != null ? this.userId : 0)
                 .fcltyid(mt10id)
                 .fname(prfnm)
                 .fdfrom(DateUtil.parseDate(this.prfpdfrom))

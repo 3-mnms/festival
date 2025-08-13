@@ -34,7 +34,7 @@ public class FestivalManageService {
 
     // 공연 등록 (기본정보 + 상세정보 + 일정)
     @Transactional
-    public String registerFestivalWithDetails(FestivalRegisterDTO request, String loginId) { // ** (파라미터에 loginId 추가) **
+    public String registerFestivalWithDetails(FestivalRegisterDTO request, Long userId) {
         String fid = generateUniqueFid();
 
         var detailReq = request.getDetail();
@@ -48,7 +48,7 @@ public class FestivalManageService {
 
         FestivalDetail detail = FestivalDetail.builder()
                 .id(fid)
-                .loginId(loginId)
+                .userId(userId)
                 .fcltyid(detailReq.getFcltyid())
                 .fname(request.getFname())
                 .fdfrom(DateUtil.parseDate(request.getFdfrom()))
@@ -109,13 +109,13 @@ public class FestivalManageService {
 
     // 공연 수정
     @Transactional
-    public Festival updateFestival(String fid, FestivalRegisterDTO request, String loginId) { // ** (파라미터에 loginId 추가) **
+    public Festival updateFestival(String fid, FestivalRegisterDTO request, Long userId) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         // 본인 소유 공연인지 확인
-        if (!festival.getFestivalDetail().getLoginId().equals(loginId)) { // ** (권한 체크 추가) **
-            throw new BusinessException(ErrorCode.NO_AUTHORITY);
+        if (!festival.getFestivalDetail().getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NOT_OWNER);
         }
 
         var detailReq = request.getDetail();
@@ -170,15 +170,14 @@ public class FestivalManageService {
         return festivalRepository.save(festival);
     }
 
-    // 공연 삭제 (주최자)
+    // 공연 삭제
     @Transactional
-    public void deleteFestivalByHost(String fid, String loginId) {
+    public void deleteFestivalByHost(String fid, Long userId) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        String owner = festival.getFestivalDetail().getLoginId();
-        if (!owner.equals(loginId)) {
-            throw new BusinessException(ErrorCode.NO_AUTHORITY);
+        if (!festival.getFestivalDetail().getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NOT_OWNER);
         }
 
         kafkaProducer.sendDeleted(fid);
@@ -187,34 +186,13 @@ public class FestivalManageService {
         detailRepository.deleteById(fid);
     }
 
-    // 주최자 공연 목록 조회
-    public List<FestivalDTO> getFestivalsByHost(String loginId) {
-        return festivalRepository.findByFestivalDetail_LoginId(loginId)
+
+    // 공연 목록 조회
+    public List<FestivalDTO> getFestivalsByHost(Long userId) {
+        return festivalRepository.findByFestivalDetail_UserId(userId)
                 .stream()
                 .map(FestivalDTO::fromEntity)
                 .collect(Collectors.toList());
-    }
-
-    // 전체 공연 목록 조회 (관리자)
-    public List<FestivalDTO> getAllFestivals() {
-        return festivalRepository.findAll()
-                .stream()
-                .map(FestivalDTO::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    // 공연 삭제 (관리자)
-    @Transactional
-    public void adminDeleteFestival(String fid) {
-        Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
-
-        String owner = festival.getFestivalDetail().getLoginId();
-
-        kafkaProducer.sendDeleted(fid);
-
-        festivalRepository.delete(festival);
-        detailRepository.deleteById(fid);
     }
 
     // fid(PF000001) 자동 생성

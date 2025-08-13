@@ -30,7 +30,7 @@ public class FestivalDetail {
     private Festival festival;
 
     @Column(nullable = false)
-    private String loginId;
+    private Long userId;
 
     private String fcltyid;
     private String fname;
