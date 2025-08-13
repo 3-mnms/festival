@@ -10,6 +10,7 @@ import java.util.List;
 public class FestivalKafkaDTO {
     private String eventType;    // e.g. "FESTIVAL_CREATED" / "FESTIVAL_UPDATED" / "FESTIVAL_DELETED"
     private String id;           // PF000001
+    private Long userId;
     private String fname;
     private LocalDate fdfrom;
     private LocalDate fdto;

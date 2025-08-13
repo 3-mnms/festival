@@ -76,8 +76,7 @@ public class FestivalDetail {
         }
     }
 
-    /** Kafka DTO 변환 메서드 - null 안전 처리 포함 */
-    /** Kafka 전송용 변환 메서드 */
+    // Kafka 전송용 변환 메서드
     public FestivalKafkaDTO toKafkaDTO() {
         List<FestivalKafkaDTO.ScheduleDTO> scheduleList =
                 (this.schedules == null)
@@ -92,6 +91,7 @@ public class FestivalDetail {
 
         return FestivalKafkaDTO.builder()
                 .id(this.id)
+                .userId(this.userId)
                 .fname(this.fname)
                 .fdfrom(this.fdfrom)
                 .fdto(this.fdto)
