@@ -172,11 +172,11 @@ public class FestivalManageService {
 
     // 공연 삭제
     @Transactional
-    public void deleteFestivalByHost(String fid, Long userId) {
+    public void deleteFestivalByHost(String fid, Long userId, boolean isAdmin) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        if (!festival.getFestivalDetail().getUserId().equals(userId)) {
+        if (!isAdmin && !festival.getFestivalDetail().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.NOT_OWNER);
         }
 
@@ -188,9 +188,14 @@ public class FestivalManageService {
 
 
     // 공연 목록 조회
-    public List<FestivalDTO> getFestivalsByHost(Long userId) {
-        return festivalRepository.findByFestivalDetail_UserId(userId)
-                .stream()
+    public List<FestivalDTO> getFestivalsByRole(Long userId, boolean isAdmin) {
+        List<Festival> festivals;
+        if (isAdmin) {
+            festivals = festivalRepository.findAll();
+        } else {
+            festivals = festivalRepository.findByFestivalDetail_UserId(userId);
+        }
+        return festivals.stream()
                 .map(FestivalDTO::fromEntity)
                 .collect(Collectors.toList());
     }
