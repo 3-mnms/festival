@@ -22,12 +22,12 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
             value = """
     select new com.teckit.festival.dto.response.FestivalListResponse(
       f.festivalDetail.id, f.fname, f.fdfrom, f.fdto, f.posterFile
-    ) from Festival f
-    """,
+    )
+    from Festival f
+  """,
             countQuery = "select count(f) from Festival f"
     )
     Page<FestivalListResponse> findList(Pageable pageable);
-
 
     Optional<Festival> findByFestivalDetail_Id(String fid);
     boolean existsByFestivalDetail_Id(String fid);

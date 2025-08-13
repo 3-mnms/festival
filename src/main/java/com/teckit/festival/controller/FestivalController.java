@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Parameter;               // **
 
 import java.util.List;
+import java.util.Map;
+
 
 @Tag(name = "공연 조회 API", description = "공연 목록 / 상세 / 카테고리 / 검색 / 조회수 API")
 @RestController
@@ -53,26 +56,45 @@ public class FestivalController {
         return ApiResponseUtil.success(categories);
     }
 
+    private static final Map<String, String> SORT_MAP = Map.of(
+            "fid",    "festivalDetail.id",
+            "fdto",   "fdto",
+            "fdfrom", "fdfrom",
+            "fname",  "fname",
+            "genrenm","genrenm"
+    );
+
+    private Sort toSort(String sortParam) {
+        // 기본: fid desc → 실제 경로로는 festivalDetail.id desc
+        if (sortParam == null || sortParam.isBlank()) {
+            return Sort.by(Sort.Order.desc("festivalDetail.id"));
+        }
+        // "key,dir" 형식 지원 (예: fid,asc / fdto,desc)
+        String[] parts = sortParam.split(",", 2);
+        String key = parts[0].trim().toLowerCase();
+        String mapped = SORT_MAP.getOrDefault(key, "festivalDetail.id");
+        Sort.Direction dir = (parts.length > 1)
+                ? Sort.Direction.fromOptionalString(parts[1].trim().toUpperCase()).orElse(Sort.Direction.DESC)
+                : Sort.Direction.DESC;
+        return Sort.by(new Sort.Order(dir, mapped));
+    }
+
     @Operation(
             summary = "공연 목록 조회",
-            description = "공연 목록(포스터/이름/기간)을 페이지네이션으로 조회합니다. 기본: page=0, size=15, sort=fdto,desc",
-            parameters = {                                           // ** Swagger 파라미터 설명
-                    @Parameter(name = "page", description = "0부터 시작하는 페이지 인덱스", example = "0"),
-                    @Parameter(name = "size", description = "페이지 크기(1~50 권장)", example = "15"),
-                    @Parameter(
-                            name = "sort",
-                            description = "정렬 필드와 방향. 여러 개 가능 (예: fdto,desc 또는 fname,asc)",
-                            array = @ArraySchema(schema = @Schema(type = "string")),
-                            example = "fdto,desc"
-                    )
-            }
+            description = """
+        공연 목록(포스터/이름/기간)을 조회합니다.
+        - 페이지: 0 고정
+        - 페이지 크기: 15 고정
+        - 정렬: sort=필드명[,asc|desc] (허용: fid, fdto, fdfrom, fname, genrenm)
+        - 기본 정렬: fid,desc
+        """
     )
     @GetMapping
     public ResponseEntity<SuccessResponse<Page<FestivalListResponse>>> getFestivals(
-            @ParameterObject                                            // ** Pageable을 page/size/sort로 펼쳐서 노출
-            @PageableDefault(size = 15, sort = "fdto", direction = Sort.Direction.DESC) // ** 백엔드 기본값
-            Pageable pageable
+            @RequestParam(required = false) String sort
     ) {
+        Sort sortOption = toSort(sort);                      // ← 여기서 'fid'를 'festivalDetail.id'로 매핑
+        Pageable pageable = PageRequest.of(0, 15, sortOption);
         Page<FestivalListResponse> page = festivalService.getFestivals(pageable);
         return ApiResponseUtil.success(page, "페스티벌 목록 조회 성공");
     }

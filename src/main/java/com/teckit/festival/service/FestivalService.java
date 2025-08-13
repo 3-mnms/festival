@@ -208,16 +208,43 @@ public class FestivalService {
 
     /* ===================== 검색 ===================== */
 
-    public List<Festival> searchByGenreAndKeyword(String genre, String keyword) {
-        return festivalRepository.findByGenrenmAndFnameContaining(genre, keyword);
+    public List<FestivalListResponse> searchByGenreAndKeyword(String genre, String keyword) {
+        return festivalRepository.findByGenrenmAndFnameContaining(genre, keyword)
+                .stream()
+                .map(f -> new FestivalListResponse(
+                        f.getFestivalDetail().getId(),
+                        f.getFname(),
+                        f.getFdfrom(),
+                        f.getFdto(),
+                        f.getPosterFile()
+                ))
+                .toList();
     }
 
-    public List<Festival> searchByGenre(String genre) {
-        return festivalRepository.findByGenrenm(genre);
+    public List<FestivalListResponse> searchByGenre(String genre) {
+        return festivalRepository.findByGenrenm(genre)
+                .stream()
+                .map(f -> new FestivalListResponse(
+                        f.getFestivalDetail().getId(),
+                        f.getFname(),
+                        f.getFdfrom(),
+                        f.getFdto(),
+                        f.getPosterFile()
+                ))
+                .toList();
     }
 
-    public List<Festival> searchByKeyword(String keyword) {
-        return festivalRepository.findByFnameContaining(keyword);
+    public List<FestivalListResponse> searchByKeyword(String keyword) {
+        return festivalRepository.findByFnameContaining(keyword)
+                .stream()
+                .map(f -> new FestivalListResponse(
+                        f.getFestivalDetail().getId(),
+                        f.getFname(),
+                        f.getFdfrom(),
+                        f.getFdto(),
+                        f.getPosterFile()
+                ))
+                .toList();
     }
 
     /* ===================== 기타 ===================== */
