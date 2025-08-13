@@ -1,6 +1,6 @@
 package com.teckit.festival.repository;
 
-import com.teckit.festival.dto.response.FestivalListResponse;
+import com.teckit.festival.dto.response.FestivalListResponseDTO;
 import com.teckit.festival.entity.Festival;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,14 +20,14 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
 
     @Query(
             value = """
-    select new com.teckit.festival.dto.response.FestivalListResponse(
+    select new com.teckit.festival.dto.response.FestivalListResponseDTO(
       f.festivalDetail.id, f.fname, f.fdfrom, f.fdto, f.posterFile
     )
     from Festival f
   """,
             countQuery = "select count(f) from Festival f"
     )
-    Page<FestivalListResponse> findList(Pageable pageable);
+    Page<FestivalListResponseDTO> findList(Pageable pageable);
 
     Optional<Festival> findByFestivalDetail_Id(String fid);
     boolean existsByFestivalDetail_Id(String fid);

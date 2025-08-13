@@ -73,6 +73,9 @@ public class FestivalDetailDTO {
     @XmlElement(name = "updatedate")
     private String updatedate;
 
+    @XmlElement(name = "entrpsnmH")
+    private String entrpsnmH;
+
     @XmlElementWrapper(name = "styurls")
     @XmlElement(name = "styurl")
     private List<String> styurls;
@@ -128,6 +131,8 @@ public class FestivalDetailDTO {
                 .posterFile(poster)
                 .contentFile(styurls != null ? styurls : new ArrayList<>())
                 .views(0)
+                .entrpsnmH(entrpsnmH)
+                .runningTime(prfruntime)
                 .build();
     }
 

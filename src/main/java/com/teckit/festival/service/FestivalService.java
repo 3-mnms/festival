@@ -4,7 +4,6 @@ import com.teckit.festival.dto.response.*;
 import com.teckit.festival.kafka.FestivalKafkaProducer;
 import com.teckit.festival.util.DateUtil;
 import jakarta.persistence.EntityNotFoundException;
-import org.hibernate.Hibernate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.teckit.festival.entity.Festival;
@@ -15,7 +14,6 @@ import com.teckit.festival.exception.ErrorCode;
 import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.util.FestivalScheduleGenerator;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,20 +53,18 @@ public class FestivalService {
                 .orElseThrow(() -> new EntityNotFoundException("공연을 찾을 수 없습니다. fid=" + fid));
     }
 
-    public Page<FestivalListResponse> getFestivals(Pageable pageable) {
+    public Page<FestivalListResponseDTO> getFestivals(Pageable pageable) {
         return festivalRepository.findList(pageable); // **(수정) 엔티티 → DTO 페이지**
     }
 
-    public FestivalDetailResponse getFestivalDetail(String fid) {
+    public FestivalDetailResponseDTO getFestivalDetail(String fid) {
         FestivalDetail d = festivalDetailRepository.findGraphByFid(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         Festival f = d.getFestival();
-        List<String> styurls = (d.getContentFile() == null)       // **수정**
-                ? List.of()
-                : d.getContentFile();                              // **수정**
+        List<String> styurls = (d.getContentFile() == null) ? List.of() : d.getContentFile();
 
-        return FestivalDetailResponse.of(f, d, styurls);
+        return FestivalDetailResponseDTO.of(f, d, styurls);
     }
 
     /* ===================== 자동 수집 ===================== */
@@ -208,10 +204,10 @@ public class FestivalService {
 
     /* ===================== 검색 ===================== */
 
-    public List<FestivalListResponse> searchByGenreAndKeyword(String genre, String keyword) {
+    public List<FestivalListResponseDTO> searchByGenreAndKeyword(String genre, String keyword) {
         return festivalRepository.findByGenrenmAndFnameContaining(genre, keyword)
                 .stream()
-                .map(f -> new FestivalListResponse(
+                .map(f -> new FestivalListResponseDTO(
                         f.getFestivalDetail().getId(),
                         f.getFname(),
                         f.getFdfrom(),
@@ -221,10 +217,10 @@ public class FestivalService {
                 .toList();
     }
 
-    public List<FestivalListResponse> searchByGenre(String genre) {
+    public List<FestivalListResponseDTO> searchByGenre(String genre) {
         return festivalRepository.findByGenrenm(genre)
                 .stream()
-                .map(f -> new FestivalListResponse(
+                .map(f -> new FestivalListResponseDTO(
                         f.getFestivalDetail().getId(),
                         f.getFname(),
                         f.getFdfrom(),
@@ -234,10 +230,10 @@ public class FestivalService {
                 .toList();
     }
 
-    public List<FestivalListResponse> searchByKeyword(String keyword) {
+    public List<FestivalListResponseDTO> searchByKeyword(String keyword) {
         return festivalRepository.findByFnameContaining(keyword)
                 .stream()
-                .map(f -> new FestivalListResponse(
+                .map(f -> new FestivalListResponseDTO(
                         f.getFestivalDetail().getId(),
                         f.getFname(),
                         f.getFdfrom(),

@@ -31,14 +31,20 @@ public class FestivalRegisterDTO {
     @Schema(description = "포스터 이미지 URL", example = "https://example.com/poster.jpg")
     private String posterFile;
 
-    @Schema(description = "공연 지역", example = "서울")
-    private String area;
+    //@Schema(description = "공연 지역", example = "서울")
+    //private String area;
 
     @Schema(description = "공연장 이름", example = "세종문화회관")
     private String fcltynm;
 
     @Schema(description = "장르명", example = "뮤지컬")
     private String genrenm;
+
+    @Schema(description = "주최명", example = "서초구청")
+    private String entrpsnmH;
+
+    @Schema(description = "러닝 시간", example = "1시간 30분")
+    private String runningtime;
 
     @Schema(description = "공연 상세 정보")
     private FestivalDetailDTO detail;
@@ -81,8 +87,8 @@ public class FestivalRegisterDTO {
         @Schema(description = "관람 연령", example = "만 12세 이상")
         private String prfage;
 
-        @Schema(description = "공연 상태", example = "공연예정")
-        private String prfstate;
+        //@Schema(description = "공연 상태", example = "공연예정")
+        //private String prfstate;
 
         @Schema(description = "수용 가능 인원", example = "300")
         @Min(0)
@@ -93,7 +99,13 @@ public class FestivalRegisterDTO {
         private List<String> contentFile = new ArrayList<>();
 
         @Schema(description = "최종 수정일", example = "2025-08-11 10:03:14")
-        private String updatedate; // ✅ 추가됨
+        private String updatedate;
+
+        @Schema(description = "주최명", example = "서초구명")
+        private String entrpsnmH;
+
+        @Schema(description = "러닝 타임", example = "1시간 30분")
+        private String runningTime;
     }
 
     @Getter

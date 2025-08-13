@@ -54,6 +54,8 @@ public class FestivalDetail {
     private int maxPurchase;
     private String prfage;
     private String posterFile;
+    private String entrpsnmH;
+    private String runningTime;
 
     @Builder.Default
     @ElementCollection

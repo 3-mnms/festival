@@ -1,24 +1,19 @@
 package com.teckit.festival.controller;
 
-import com.teckit.festival.dto.response.FestivalDetailResponse;
-import com.teckit.festival.dto.response.FestivalListResponse;
+import com.teckit.festival.dto.response.FestivalDetailResponseDTO;
+import com.teckit.festival.dto.response.FestivalListResponseDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
 import com.teckit.festival.service.FestivalService;
 import com.teckit.festival.util.ApiResponseUtil;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Parameter;               // **
 
 import java.util.List;
 import java.util.Map;
@@ -90,21 +85,21 @@ public class FestivalController {
         """
     )
     @GetMapping
-    public ResponseEntity<SuccessResponse<Page<FestivalListResponse>>> getFestivals(
+    public ResponseEntity<SuccessResponse<Page<FestivalListResponseDTO>>> getFestivals(
             @RequestParam(required = false) String sort
     ) {
         Sort sortOption = toSort(sort);                      // ← 여기서 'fid'를 'festivalDetail.id'로 매핑
         Pageable pageable = PageRequest.of(0, 15, sortOption);
-        Page<FestivalListResponse> page = festivalService.getFestivals(pageable);
+        Page<FestivalListResponseDTO> page = festivalService.getFestivals(pageable);
         return ApiResponseUtil.success(page, "페스티벌 목록 조회 성공");
     }
 
     @Operation(summary = "공연 상세 조회", description = "공연 ID(fid)로 상세 정보를 조회합니다.")
     @GetMapping("/{fid}")
-    public ResponseEntity<SuccessResponse<FestivalDetailResponse>> getFestivalDetail(
-            @PathVariable("fid") String fid // ** (id → fid로 통일)
+    public ResponseEntity<SuccessResponse<FestivalDetailResponseDTO>> getFestivalDetail(
+            @PathVariable("fid") String fid
     ) {
-        FestivalDetailResponse detail = festivalService.getFestivalDetail(fid); // **
+        FestivalDetailResponseDTO detail = festivalService.getFestivalDetail(fid);
         return ApiResponseUtil.success(detail);
     }
 
