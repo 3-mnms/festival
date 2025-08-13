@@ -1,15 +1,12 @@
 package com.teckit.festival.service;
 
+import com.teckit.festival.dto.response.*;
 import com.teckit.festival.kafka.FestivalKafkaProducer;
 import com.teckit.festival.util.DateUtil;
+import jakarta.persistence.EntityNotFoundException;
 import org.hibernate.Hibernate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.teckit.festival.dto.response.FestivalDetailDTO;
-import com.teckit.festival.dto.response.FestivalDetailListDTO;
-import com.teckit.festival.dto.response.FestivalListDTO;
-import com.teckit.festival.dto.response.FestivalListItemDTO;
-import com.teckit.festival.dto.response.FestivalDTO;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalSchedule;
@@ -41,28 +38,37 @@ public class FestivalService {
 
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository festivalDetailRepository;
+
     private final RestClient restClient;
     private final FestivalKafkaProducer festivalKafkaProducer;
 
-
     @Value("${festival-api-key}")
     private String festivalApiKey;
-
-    /*@PostConstruct
-    public void checkApiKey() {
-        log.info("🎯 FESTIVAL_API_KEY = {}", festivalApiKey);
-    }*/
 
     private static final String API_URL = "http://www.kopis.or.kr/openApi/restful/pblprfr";
 
     /* ===================== 조회 ===================== */
 
-    public Page<Festival> getFestivals(Pageable pageable) {
-        return festivalRepository.findAll(pageable);
+    @Transactional(readOnly = true)
+    public Festival getFestivalByFid(String fid) {
+        return festivalRepository.findByFestivalDetail_Id(fid)
+                .orElseThrow(() -> new EntityNotFoundException("공연을 찾을 수 없습니다. fid=" + fid));
     }
 
-    public Optional<FestivalDetail> getFestivalDetail(String fid) {
-        return festivalDetailRepository.findByFestivalId(fid);
+    public Page<FestivalListResponse> getFestivals(Pageable pageable) {
+        return festivalRepository.findList(pageable); // **(수정) 엔티티 → DTO 페이지**
+    }
+
+    public FestivalDetailResponse getFestivalDetail(String fid) {
+        FestivalDetail d = festivalDetailRepository.findGraphByFid(fid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+
+        Festival f = d.getFestival();
+        List<String> styurls = (d.getContentFile() == null)       // **수정**
+                ? List.of()
+                : d.getContentFile();                              // **수정**
+
+        return FestivalDetailResponse.of(f, d, styurls);
     }
 
     /* ===================== 자동 수집 ===================== */

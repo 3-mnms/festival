@@ -1,6 +1,7 @@
 package com.teckit.festival.repository;
 
 import com.teckit.festival.entity.FestivalDetail;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,9 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
     @Query("SELECT fd FROM FestivalDetail fd LEFT JOIN FETCH fd.schedules WHERE fd.id = :id")
     Optional<FestivalDetail> findByIdWithSchedules(@Param("id") String id);
 
+    @EntityGraph(attributePaths = {"contentFile"})
+    @Query("select d from FestivalDetail d where d.id = :fid")
+    Optional<FestivalDetail> findGraphByFid(@Param("fid") String fid);
     // 🎯 중복 fid 체크용
     boolean existsById(String fid);
 

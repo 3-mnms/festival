@@ -1,3 +1,5 @@
+// package com.teckit.festival.entity;
+
 package com.teckit.festival.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -18,14 +20,9 @@ public class Festival {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;  // 내부 PK
 
-    @OneToOne
-    @JoinColumn(name = "fid", referencedColumnName = "id") // FK → FestivalDetail.id
-    @JsonManagedReference
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "fid", referencedColumnName = "id")
     private FestivalDetail festivalDetail;
-
-    //@Column(nullable = false)
-    //private String loginId; // 주최자 ID
-
     @Column(nullable = false)
     private String fname; // 공연명
 
@@ -39,20 +36,16 @@ public class Festival {
     @Column(nullable = false)
     private String fcltynm; // 장소명
 
-    //@Column
-    //private String area; // 지역
-
     private String fage;     // 연령 제한
     private String genrenm;  // 장르
     private String fstate;   // 상태
 
-    //private int availableNOP; // 수용 인원
-
-    // 편의 메서드
-    public void setFid(String fid) {
-        if (this.festivalDetail == null) {
-            this.festivalDetail = new FestivalDetail();
+    public void linkDetail(FestivalDetail detail) {
+        this.festivalDetail = detail;
+        if (detail.getFestival() != null && detail.getFestival() != this) {
+            detail.setFestival(this);
+        } else if (detail.getFestival() == null) {
+            detail.setFestival(this);
         }
-        this.festivalDetail.setId(fid);
     }
 }

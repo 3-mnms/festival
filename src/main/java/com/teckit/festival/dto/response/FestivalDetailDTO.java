@@ -121,7 +121,7 @@ public class FestivalDetailDTO {
                 .availableNOP(finalAvailableNOP)
                 .genrenm(genrenm)
                 .fstate(prfstate)
-                .updatedate(updatedDateTime) // **변경된 부분**
+                .updatedate(updatedDateTime)
                 .faddress(faddress)
                 .ticketPick(safeTicketPick)
                 .maxPurchase(safeMaxPurchase)

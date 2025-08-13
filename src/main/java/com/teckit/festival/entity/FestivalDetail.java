@@ -36,8 +36,6 @@ public class FestivalDetail {
     private String fname;
     private LocalDate fdfrom;
     private LocalDate fdto;
-    //private String fdfrom;
-    //private String fdto;
     private String fcltynm;
     private String fcast;
 
@@ -65,7 +63,6 @@ public class FestivalDetail {
     @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FestivalSchedule> schedules = new ArrayList<>();
 
-    /** 부모-자식 연관관계 주입 포함해서 안전하게 교체 */
     public void setSchedules(List<FestivalSchedule> schedules) {
         this.schedules.clear();
         if (schedules != null) {
@@ -101,7 +98,7 @@ public class FestivalDetail {
                 .maxPurchase(this.maxPurchase)
                 .ticketPrice(this.ticketPrice)
                 .availableNOP(this.availableNOP)
-                .schedules(scheduleList) // 객체 리스트로 변경
+                .schedules(scheduleList)
                 .build();
     }
 }

@@ -20,7 +20,6 @@ public class FestivalDTO {
     private String genrenm;      // 장르
     private String prfstate;     // 상태
     private String prfage;       // 관람 연령
-    //private String loginId;      // 주최자 ID
     private int ticketPick;      // 티켓 방식
     private int maxPurchase;     // 1인 최대 구매 수량
     private int ticketPrice;     // 티켓 가격
