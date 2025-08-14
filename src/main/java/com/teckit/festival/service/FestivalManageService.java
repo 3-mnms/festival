@@ -18,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,19 +46,23 @@ public class FestivalManageService {
         int safeMaxPurchase = Math.max(1, detailReq.getMaxPurchase());
         int safeAvailable   = Math.max(0, detailReq.getAvailableNOP());
 
+        LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
+        LocalDate fdto   = DateUtil.parseDate(request.getFdto());
+        String computedState = calcState(fdfrom, fdto);
+
         FestivalDetail detail = FestivalDetail.builder()
                 .id(fid)
                 .userId(userId)
                 .fcltyid(detailReq.getFcltyid())
                 .fname(request.getFname())
-                .fdfrom(DateUtil.parseDate(request.getFdfrom()))
-                .fdto(DateUtil.parseDate(request.getFdto()))
+                .fdfrom(fdfrom)
+                .fdto(fdto)
                 .fcltynm(request.getFcltynm())
                 .fcast(detailReq.getFcast())
                 .story(detailReq.getStory())
                 .ticketPrice(detailReq.getTicketPrice())
                 .genrenm(request.getGenrenm())
-                .fstate("공연예정")
+                .fstate(computedState)
                 .availableNOP(safeAvailable)
                 .views(0)
                 .faddress(detailReq.getFaddress())
@@ -87,12 +93,13 @@ public class FestivalManageService {
 
         Festival festival = Festival.builder()
                 .fname(request.getFname())
-                .fdfrom(DateUtil.parseDate(request.getFdfrom()))
-                .fdto(DateUtil.parseDate(request.getFdto()))
+                .fdfrom(fdfrom)
+                .fdto(fdto)
                 .posterFile(request.getPosterFile())
                 .fcltynm(request.getFcltynm())
                 .genrenm(request.getGenrenm())
-                .fstate("공연예정")
+                .fstate(computedState)
+                .prfage(detailReq.getPrfage())
                 .festivalDetail(detail)
                 .build();
         detail.setFestival(festival);
@@ -102,7 +109,7 @@ public class FestivalManageService {
         FestivalDetail persisted = detailRepository.findById(fid)
                 .orElseThrow(() -> new IllegalStateException("Saved detail not found: " + fid));
 
-        // 전송 대상 교체: 저장 전 객체(detail) → 저장 후 객체(persisted)
+        // 전송 대상: 저장 후 객체(persisted)
         kafkaProducer.send(persisted, "FESTIVAL_CREATED");
 
         return fid;
@@ -124,14 +131,19 @@ public class FestivalManageService {
             throw new IllegalArgumentException("detail is required");
         }
 
+        LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
+        LocalDate fdto   = DateUtil.parseDate(request.getFdto());
+        String computedState = calcState(fdfrom, fdto);
+
         FestivalDetail detail = festival.getFestivalDetail();
         detail.setFname(request.getFname());
-        detail.setFdfrom(DateUtil.parseDate(request.getFdfrom()));
-        detail.setFdto(DateUtil.parseDate(request.getFdto()));
+        detail.setFdfrom(fdfrom);
+        detail.setFdto(fdto);
         detail.setFcltynm(request.getFcltynm());
         detail.setPosterFile(request.getPosterFile());
         detail.setGenrenm(request.getGenrenm());
-        detail.setFstate("공연예정");
+        detail.setFstate(computedState);
+        detail.setPrfage(detailReq.getPrfage());
         detail.setFaddress(detailReq.getFaddress());
         detail.setTicketPick(Math.max(1, detailReq.getTicketPick()));
         detail.setMaxPurchase(Math.max(1, detailReq.getMaxPurchase()));
@@ -156,12 +168,13 @@ public class FestivalManageService {
         detail.setSchedules(schedules);
 
         festival.setFname(request.getFname());
-        festival.setFdfrom(DateUtil.parseDate(request.getFdfrom()));
-        festival.setFdto(DateUtil.parseDate(request.getFdto()));
+        festival.setFdfrom(fdfrom);
+        festival.setFdto(fdto);
         festival.setPosterFile(request.getPosterFile());
         festival.setFcltynm(request.getFcltynm());
         festival.setGenrenm(request.getGenrenm());
-        festival.setFstate("공연예정");
+        festival.setPrfage(detailReq.getPrfage());
+        festival.setFstate(computedState);
 
         festivalRepository.saveAndFlush(festival);
         Hibernate.initialize(festival.getFestivalDetail().getSchedules());
@@ -186,7 +199,6 @@ public class FestivalManageService {
         festivalRepository.delete(festival);
         detailRepository.deleteById(fid);
     }
-
 
     // 공연 목록 조회
     public List<FestivalDTO> getFestivalsByRole(Long userId, boolean isAdmin) {
@@ -216,5 +228,14 @@ public class FestivalManageService {
             builder.append((int) (Math.random() * 10));
         }
         return builder.toString();
+    }
+
+    // 공연 상태 계산
+    private String calcState(LocalDate fdfrom, LocalDate fdto) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        if (fdfrom == null || fdto == null) return "공연예정";
+        if (today.isBefore(fdfrom)) return "공연예정";
+        if (today.isAfter(fdto))   return "공연완료";
+        return "공연중";
     }
 }
