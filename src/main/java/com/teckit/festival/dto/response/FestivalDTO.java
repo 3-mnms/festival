@@ -36,7 +36,7 @@ public class FestivalDTO {
                 //.area(festival.getArea())
                 .genrenm(festival.getGenrenm())
                 .prfstate(festival.getFstate())
-                .prfage(festival.getFage())
+                .prfage(festival.getPrfage())
                 .ticketPick(festival.getFestivalDetail().getTicketPick())
                 .maxPurchase(festival.getFestivalDetail().getMaxPurchase())
                 .ticketPrice(festival.getFestivalDetail().getTicketPrice())

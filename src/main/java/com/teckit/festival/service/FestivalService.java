@@ -102,21 +102,20 @@ public class FestivalService {
         // 5. Entity 변환
         FestivalDetail detail = dto.toEntity(price, nop);
 
-        // 6. 스케줄 설정 (기존 복사 or 랜덤 생성)
-        if (detail.getSchedules() == null || detail.getSchedules().isEmpty()) {
-            if (existing.isPresent() && existing.get().getSchedules() != null && !existing.get().getSchedules().isEmpty()) {
-                List<FestivalSchedule> copySchedules = new ArrayList<>();
-                for (FestivalSchedule s : existing.get().getSchedules()) {
-                    copySchedules.add(FestivalSchedule.builder()
-                            .festivalDetail(detail)
-                            .dayOfWeek(s.getDayOfWeek())
-                            .time(s.getTime())
-                            .build());
-                }
-                detail.setSchedules(copySchedules);
+        // 6. 스케줄 설정 (기존 DB 값이 있으면 그대로 사용)
+        if (existing.isPresent()) {
+            FestivalDetail existingDetail = existing.get();
+
+            // DB에 이미 스케줄이 있으면 추가 생성 안 함
+            if (existingDetail.getSchedules() != null && !existingDetail.getSchedules().isEmpty()) {
+                detail.setSchedules(existingDetail.getSchedules()); // 그대로 복사 (필요 시)
             } else {
+                // DB에도 없으면 랜덤 생성
                 detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail));
             }
+        } else {
+            // 기존 Detail이 없으면 무조건 랜덤 생성
+            detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail));
         }
 
         // 7. 저장
@@ -140,7 +139,7 @@ public class FestivalService {
         festival.setFcltynm(dto.getFcltynm());
         festival.setGenrenm(dto.getGenrenm());
         festival.setFstate(dto.getPrfstate());
-        festival.setFage(dto.getPrfage());
+        festival.setPrfage(dto.getPrfage());
 
         festivalRepository.save(festival);
     }
@@ -174,12 +173,14 @@ public class FestivalService {
         return response.getFestivalDetailList().get(0);
     }
 
+    // 기간으로 ID 수집
     public void fetchAndSaveFestivalListAndDetail(String stdate, String eddate) {
         List<String> ids = fetchIdsByPeriod(stdate, eddate);
         log.info("📥 {}~{} ID 수집 완료: {}건", stdate, eddate, ids.size());
         fetchAndSaveFestivalDetails(ids);
     }
 
+    // 기간으로 ID 목록 조회
     private List<String> fetchIdsByPeriod(String stdate, String eddate) {
         String uri = UriComponentsBuilder
                 .fromHttpUrl(API_URL)
@@ -187,6 +188,7 @@ public class FestivalService {
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
+                //100*2 = 200개 수집 (수정 가능)
                 .queryParam("rows", "100")
                 .toUriString();
 
@@ -213,7 +215,8 @@ public class FestivalService {
                         f.getFdfrom(),
                         f.getFdto(),
                         f.getPosterFile(),
-                        f.getFcltynm()
+                        f.getFcltynm(),
+                        f.getGenrenm()
                 ))
                 .toList();
     }
@@ -227,7 +230,8 @@ public class FestivalService {
                         f.getFdfrom(),
                         f.getFdto(),
                         f.getPosterFile(),
-                        f.getFcltynm()
+                        f.getFcltynm(),
+                        f.getGenrenm()
                 ))
                 .toList();
     }
@@ -241,7 +245,8 @@ public class FestivalService {
                         f.getFdfrom(),
                         f.getFdto(),
                         f.getPosterFile(),
-                        f.getFcltynm()
+                        f.getFcltynm(),
+                        f.getGenrenm()
                 ))
                 .toList();
     }

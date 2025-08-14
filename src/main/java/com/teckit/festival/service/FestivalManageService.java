@@ -97,6 +97,7 @@ public class FestivalManageService {
                 .fcltynm(request.getFcltynm())
                 .genrenm(request.getGenrenm())
                 .fstate("공연예정")
+                //.prfage(request.getPrfage())
                 .festivalDetail(detail)
                 .build();
         detail.setFestival(festival);

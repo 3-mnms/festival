@@ -36,7 +36,7 @@ public class Festival {
     @Column(nullable = false)
     private String fcltynm; // 장소명
 
-    private String fage;     // 연령 제한
+    private String prfage;     // 관람 연령
     private String genrenm;  // 장르
     private String fstate;   // 상태
 

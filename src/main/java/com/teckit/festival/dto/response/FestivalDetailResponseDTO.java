@@ -49,7 +49,7 @@ public class FestivalDetailResponseDTO {
                 .prfpdto(f.getFdto())
                 .fcltynm(f.getFcltynm())
                 .fcast(d.getFcast())
-                .prfage(f.getFage())
+                .prfage(f.getPrfage())
                 .story(d.getStory())
                 .ticketPrice(d.getTicketPrice())
                 .availableNOP(d.getAvailableNOP())
