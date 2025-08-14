@@ -38,9 +38,7 @@ public class FestivalManageService {
         String fid = generateUniqueFid();
 
         var detailReq = request.getDetail();
-        if (detailReq == null) {
-            throw new IllegalArgumentException("detail is required");
-        }
+        if (detailReq == null) throw new IllegalArgumentException("detail is required");
 
         int safeTicketPick  = Math.max(1, detailReq.getTicketPick());
         int safeMaxPurchase = Math.max(1, detailReq.getMaxPurchase());
@@ -69,23 +67,21 @@ public class FestivalManageService {
                 .contentFile(detailReq.getContentFile())
                 .entrpsnmH(detailReq.getEntrpsnmH())
                 .runningTime(detailReq.getRunningTime())
-                .updatedate(
-                        detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
-                                ? LocalDateTime.parse(
-                                detailReq.getUpdatedate().substring(0, 19),
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                        )
-                                : LocalDateTime.now()
-                )
+                .updatedate( (detailReq.getUpdatedate()!=null && !detailReq.getUpdatedate().isBlank())
+                        ? LocalDateTime.parse(detailReq.getUpdatedate().substring(0,19), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        : LocalDateTime.now())
                 .build();
 
-        List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.<FestivalSchedule>of()
+        List<FestivalSchedule> schedules = (request.getSchedules()==null ? List.<FestivalSchedule>of()
                 : request.getSchedules().stream()
-                .map(s -> FestivalSchedule.builder()
-                        .festivalDetail(detail) // 등록 시 festivalDetailId 무시
-                        .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek().toUpperCase()))
-                        .time(s.getTime())
-                        .build())
+                .map(s -> {
+                    FestivalSchedule fs = FestivalSchedule.builder()
+                            .festivalDetail(detail)
+                            .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek().toUpperCase()))
+                            .time(s.getTime())
+                            .build();
+                    return fs;
+                })
                 .collect(Collectors.toList()));
         detail.setSchedules(schedules);
 
@@ -97,15 +93,17 @@ public class FestivalManageService {
                 .fcltynm(request.getFcltynm())
                 .genrenm(request.getGenrenm())
                 .fstate("공연예정")
-                //.prfage(request.getPrfage())
                 .festivalDetail(detail)
                 .build();
         detail.setFestival(festival);
 
         detailRepository.saveAndFlush(detail);
-        Hibernate.initialize(detail.getSchedules());
 
-        kafkaProducer.send(detail, "FESTIVAL_CREATED");
+        FestivalDetail persisted = detailRepository.findById(fid)
+                .orElseThrow(() -> new IllegalStateException("Saved detail not found: " + fid));
+
+        // 전송 대상 교체: 저장 전 객체(detail) → 저장 후 객체(persisted)
+        kafkaProducer.send(persisted, "FESTIVAL_CREATED");
 
         return fid;
     }
