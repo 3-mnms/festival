@@ -49,9 +49,6 @@ public class FestivalDetailDTO {
     @XmlElement(name = "prfcrew")
     private String prfcrew;
 
-    @XmlElement(name = "prfruntime")
-    private String prfruntime;
-
     @XmlElement(name = "prfage")
     private String prfage;
 
@@ -75,6 +72,9 @@ public class FestivalDetailDTO {
 
     @XmlElement(name = "entrpsnmH")
     private String entrpsnmH;
+
+    @XmlElement(name = "prfruntime")
+    private String prfruntime;
 
     @XmlElementWrapper(name = "styurls")
     @XmlElement(name = "styurl")

@@ -21,7 +21,7 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
     @Query(
             value = """
     select new com.teckit.festival.dto.response.FestivalListResponseDTO(
-      f.festivalDetail.id, f.fname, f.fdfrom, f.fdto, f.posterFile
+      f.festivalDetail.id, f.fname, f.fdfrom, f.fdto, f.posterFile, f.fcltynm
     )
     from Festival f
   """,

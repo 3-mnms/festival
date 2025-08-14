@@ -212,7 +212,8 @@ public class FestivalService {
                         f.getFname(),
                         f.getFdfrom(),
                         f.getFdto(),
-                        f.getPosterFile()
+                        f.getPosterFile(),
+                        f.getFcltynm()
                 ))
                 .toList();
     }
@@ -225,7 +226,8 @@ public class FestivalService {
                         f.getFname(),
                         f.getFdfrom(),
                         f.getFdto(),
-                        f.getPosterFile()
+                        f.getPosterFile(),
+                        f.getFcltynm()
                 ))
                 .toList();
     }
@@ -238,7 +240,8 @@ public class FestivalService {
                         f.getFname(),
                         f.getFdfrom(),
                         f.getFdto(),
-                        f.getPosterFile()
+                        f.getPosterFile(),
+                        f.getFcltynm()
                 ))
                 .toList();
     }

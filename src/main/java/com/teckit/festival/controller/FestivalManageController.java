@@ -24,7 +24,7 @@ public class FestivalManageController {
 
     @Operation(summary = "공연 등록", description = "공연 기본정보, 상세정보, 일정을 통합 등록합니다.")
     @PreAuthorize("hasRole('HOST')")
-    @PostMapping("/register")
+    @PostMapping("/manage")
     public ResponseEntity<Map<String, Object>> registerFestival(
             java.security.Principal principal,
             @RequestBody FestivalRegisterDTO request
@@ -40,7 +40,7 @@ public class FestivalManageController {
 
     @Operation(summary = "공연 수정 (주최자)", description = "공연 fid(PF000001 등)를 통해 공연 기본/상세/일정 정보를 수정합니다.")
     @PreAuthorize("hasRole('HOST')")
-    @PutMapping("/register/{fid}")
+    @PutMapping("/manage/{fid}")
     public ResponseEntity<Map<String, Object>> updateFestival(
             java.security.Principal principal,
             @PathVariable String fid,
@@ -58,7 +58,7 @@ public class FestivalManageController {
 
     @Operation(summary = "공연 삭제 (주최자/운영자)", description = "주최자는 자신이 등록한 공연을 삭제하고, 운영자는 전체 공연 목록을 삭제합니다.")
     @PreAuthorize("hasAnyRole('HOST','ADMIN')")
-    @DeleteMapping("/register/{fid}")
+    @DeleteMapping("/manage/{fid}")
     public ResponseEntity<Map<String, Object>> deleteFestivalByHost(
             @PathVariable String fid,
             java.security.Principal principal

@@ -67,6 +67,8 @@ public class FestivalManageService {
                 .prfage(detailReq.getPrfage())
                 .posterFile(request.getPosterFile())
                 .contentFile(detailReq.getContentFile())
+                .entrpsnmH(detailReq.getEntrpsnmH())
+                .runningTime(detailReq.getRunningTime())
                 .updatedate(
                         detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
                                 ? LocalDateTime.parse(

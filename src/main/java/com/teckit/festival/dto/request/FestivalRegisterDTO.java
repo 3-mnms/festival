@@ -1,5 +1,7 @@
 package com.teckit.festival.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -39,12 +41,6 @@ public class FestivalRegisterDTO {
 
     @Schema(description = "장르명", example = "뮤지컬")
     private String genrenm;
-
-    @Schema(description = "주최명", example = "서초구청")
-    private String entrpsnmH;
-
-    @Schema(description = "러닝 시간", example = "1시간 30분")
-    private String runningtime;
 
     @Schema(description = "공연 상세 정보")
     private FestivalDetailDTO detail;
@@ -101,7 +97,7 @@ public class FestivalRegisterDTO {
         @Schema(description = "최종 수정일", example = "2025-08-11 10:03:14")
         private String updatedate;
 
-        @Schema(description = "주최명", example = "서초구명")
+        @Schema(description = "주최명", example = "서초구청")
         private String entrpsnmH;
 
         @Schema(description = "러닝 타임", example = "1시간 30분")

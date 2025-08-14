@@ -15,6 +15,7 @@ public class FestivalListResponseDTO {
     private LocalDate prfpdfrom;
     private LocalDate prfpdto;
     private String poster;
+    private String fcltynm;
 
     public static FestivalListResponseDTO fromEntity(Festival festival) {
         return FestivalListResponseDTO.builder()
@@ -23,6 +24,7 @@ public class FestivalListResponseDTO {
                 .prfpdfrom(festival.getFdfrom())
                 .prfpdto(festival.getFdto())
                 .poster(festival.getPosterFile())
+                .fcltynm(festival.getFcltynm())
                 .build();
     }
 }
