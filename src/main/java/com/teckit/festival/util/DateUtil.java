@@ -22,4 +22,10 @@ public class DateUtil {
         }
     }
 
+    public static String formatDate(LocalDate localDate) {
+        if (localDate == null) {
+            return null;
+        }
+        return localDate.format(FORMATTER);
+    }
 }

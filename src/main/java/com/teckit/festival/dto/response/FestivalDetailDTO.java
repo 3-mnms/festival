@@ -137,6 +137,33 @@ public class FestivalDetailDTO {
                 .build();
     }
 
+    public static FestivalDetailDTO fromEntity(FestivalDetail entity) {
+        return FestivalDetailDTO.builder()
+                .id(entity.getId())
+                .userId(entity.getUserId())
+                .fcltyid(entity.getFcltyid())
+                .fname(entity.getFname())
+                .fdfrom(DateUtil.formatDate(entity.getFdfrom()))
+                .fdto(DateUtil.formatDate(entity.getFdto()))
+                .fcltynm(entity.getFcltynm())
+                .fcast(entity.getFcast())
+                .prfage(entity.getPrfage())
+                .story(entity.getStory())
+                .ticketPrice(entity.getTicketPrice())
+                .availableNOP(entity.getAvailableNOP())
+                .genrenm(entity.getGenrenm())
+                .fstate(entity.getFstate())
+                .updatedate(entity.getUpdatedate() != null ? entity.getUpdatedate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null)
+                .faddress(entity.getFaddress())
+                .ticketPick(entity.getTicketPick())
+                .maxPurchase(entity.getMaxPurchase())
+                .posterFile(entity.getPosterFile())
+                .styurls(entity.getContentFile())
+                .entrpsnmH(entity.getEntrpsnmH())
+                .runningTime(entity.getRunningTime())
+                .build();
+    }
+
     public String getUpdatedate() {
         return updatedate;
     }

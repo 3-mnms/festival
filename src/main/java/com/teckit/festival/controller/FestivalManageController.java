@@ -2,6 +2,7 @@ package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.request.FestivalRegisterDTO;
 import com.teckit.festival.dto.response.FestivalDTO;
+import com.teckit.festival.dto.response.FestivalDetailDTO; // FestivalDetailDTO import 추가
 import com.teckit.festival.service.FestivalManageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,11 +44,13 @@ public class FestivalManageController {
             @RequestBody FestivalRegisterDTO request
     ) {
         Long userId = requireUserId(authentication);
-        String fid = manageService.registerFestivalWithDetails(request, userId);
+        // registerFestivalWithDetails 메서드는 FestivalDetailDTO를 반환하도록 수정되었습니다.
+        // 그 반환값을 그대로 응답 데이터로 사용합니다.
+        FestivalDetailDTO responseDto = manageService.registerFestivalWithDetails(request, userId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "🎉 공연 등록 성공",
-                "data", fid
+                "data", responseDto // DTO 객체를 바로 응답
         ));
     }
 
@@ -60,12 +63,13 @@ public class FestivalManageController {
             @RequestBody FestivalRegisterDTO request
     ) {
         Long userId = requireUserId(authentication);
-        var updated = manageService.updateFestival(fid, request, userId);
-        var response = FestivalDTO.fromEntity(updated);
+        // updateFestival 메서드는 FestivalDetailDTO를 반환하도록 수정되었습니다.
+        // 그 반환값을 그대로 응답 데이터로 사용합니다.
+        FestivalDetailDTO responseDto = manageService.updateFestival(fid, request, userId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "✏️ 공연 수정 성공",
-                "data", response
+                "data", responseDto // DTO 객체를 바로 응답
         ));
     }
 

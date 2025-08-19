@@ -1,6 +1,7 @@
 package com.teckit.festival.service;
 
 import com.teckit.festival.dto.request.FestivalRegisterDTO;
+import com.teckit.festival.dto.response.FestivalDetailDTO;
 import com.teckit.festival.dto.response.FestivalDTO;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
@@ -36,7 +37,7 @@ public class FestivalManageService {
 
     // 공연 등록 (기본정보 + 상세정보 + 일정)
     @Transactional
-    public String registerFestivalWithDetails(FestivalRegisterDTO request, Long userId) {
+    public FestivalDetailDTO registerFestivalWithDetails(FestivalRegisterDTO request, Long userId) { // 👈 반환 타입 변경
         String fid = generateUniqueFid();
 
         var detailReq = request.getDetail();
@@ -112,12 +113,13 @@ public class FestivalManageService {
         // 전송 대상: 저장 후 객체(persisted)
         kafkaProducer.send(persisted, "FESTIVAL_CREATED");
 
-        return fid;
+        // FestivalDetailDTO로 변환하여 반환
+        return FestivalDetailDTO.fromEntity(persisted);
     }
 
     // 공연 수정
     @Transactional
-    public Festival updateFestival(String fid, FestivalRegisterDTO request, Long userId) {
+    public FestivalDetailDTO updateFestival(String fid, FestivalRegisterDTO request, Long userId) { // 👈 반환 타입 변경
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
@@ -181,7 +183,8 @@ public class FestivalManageService {
 
         kafkaProducer.send(festival.getFestivalDetail(), "FESTIVAL_UPDATED");
 
-        return festivalRepository.save(festival);
+        // FestivalDetailDTO로 변환하여 반환
+        return FestivalDetailDTO.fromEntity(festival.getFestivalDetail());
     }
 
     // 공연 삭제
