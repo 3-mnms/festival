@@ -36,21 +36,22 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 게이트웨이가 붙여주는 헤더
-        final String userIdHeader = trimToNull(request.getHeader("X-User-Id"));      // ** rename + String으로 받기
-        // final String loginId = trimToNull(request.getHeader("X-Login-Id"));        // (옵션) loginId를 쓴다면 사용
-        final String rolesHdr    = trimToNull(request.getHeader("X-User-Role"));     // 예: "HOST", "ADMIN" 또는 "HOST,ADMIN"
+        // 게이트웨이가 붙여주는 헤더 (✅ userId 사용)
+        final String userIdHeader = trimToNull(request.getHeader("X-User-Id"));
+        final String rolesHdr     = trimToNull(request.getHeader("X-User-Role"));
 
         Authentication current = SecurityContextHolder.getContext().getAuthentication();
         boolean isAnonymous = (current instanceof AnonymousAuthenticationToken);
         boolean canSetAuth = (current == null) || isAnonymous;
 
-        if (canSetAuth && userIdHeader != null && rolesHdr != null) {                 // ** 변수명/널체크 수정
+        if (canSetAuth && userIdHeader != null && rolesHdr != null) {
+            // userId는 숫자여야 하므로 안전하게 파싱
             final Long userId;
             try {
-                userId = Long.valueOf(userIdHeader);                                  // ** 숫자 변환 (예외 처리)
+                userId = Long.valueOf(userIdHeader);
             } catch (NumberFormatException e) {
-                logger.warn("[HeaderAuth] invalid X-User-Id: " + userIdHeader);       // ** 경고 로그
+                // 잘못된 헤더면 인증 세팅 없이 통과
+                logger.warn("[HeaderAuth] invalid X-User-Id: " + userIdHeader);
                 chain.doFilter(request, response);
                 return;
             }
@@ -59,19 +60,16 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .map(String::toUpperCase)
-                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)                // ** ROLE_ 접두어 보정
+                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
 
-            logger.info("[HeaderAuth] userId=" + userId +                              // ** 로깅 수정
-                    ", rolesHeader=" + rolesHdr +
-                    " -> authorities=" + authorities);
+            logger.info("[HeaderAuth] userId=" + userId + ", rolesHeader=" + rolesHdr
+                    + " -> authorities=" + authorities);
 
-            // principal을 숫자 문자열로 넣어두면 controller에서 Long.parseLong(getName())로 사용 가능
+            // principal = userId(String) → Controller에서 Long.parseLong(principal.getName()) 가능
             UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(String.valueOf(userId),    // ** principal을 String("123")로
-                            null,
-                            authorities);
+                    new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, authorities);
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
