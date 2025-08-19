@@ -26,28 +26,29 @@ import java.util.stream.Collectors;
 public class FestivalDetailDTO {
 
     @XmlElement(name = "mt20id")
-    private String mt20id;
+    private String id;
 
     @XmlElement(name = "mt10id")
-    private String mt10id;
+    private String fcltyid;
 
     @XmlElement(name = "prfnm")
-    private String prfnm;
+    private String fname;
 
     @XmlElement(name = "prfpdfrom")
-    private String prfpdfrom;
+    private String fdfrom;
 
     @XmlElement(name = "prfpdto")
-    private String prfpdto;
+    private String fdto;
 
     @XmlElement(name = "fcltynm")
     private String fcltynm;
 
     @XmlElement(name = "prfcast")
-    private String prfcast;
+    private String fcast;
 
-    @XmlElement(name = "prfcrew")
-    private String prfcrew;
+    //@XmlElement(name = "prfcrew")
+    //private String prfcrew;
+    //private String prfcrew;
 
     @XmlElement(name = "prfage")
     private String prfage;
@@ -56,16 +57,16 @@ public class FestivalDetailDTO {
     private String pcseguidance;
 
     @XmlElement(name = "poster")
-    private String poster;
+    private String posterFile;
 
     @XmlElement(name = "sty")
-    private String sty;
+    private String story;
 
     @XmlElement(name = "genrenm")
     private String genrenm;
 
     @XmlElement(name = "prfstate")
-    private String prfstate;
+    private String fstate;
 
     @XmlElement(name = "updatedate")
     private String updatedate;
@@ -74,7 +75,7 @@ public class FestivalDetailDTO {
     private String entrpsnmH;
 
     @XmlElement(name = "prfruntime")
-    private String prfruntime;
+    private String runningTime;
 
     @XmlElementWrapper(name = "styurls")
     @XmlElement(name = "styurl")
@@ -110,29 +111,29 @@ public class FestivalDetailDTO {
         }
 
         return FestivalDetail.builder()
-                .id(mt20id)
+                .id(id)
                 .userId(this.userId != null ? this.userId : 0)
-                .fcltyid(mt10id)
-                .fname(prfnm)
-                .fdfrom(DateUtil.parseDate(this.prfpdfrom))
-                .fdto(DateUtil.parseDate(this.prfpdto))
+                .fcltyid(fcltyid)
+                .fname(fname)
+                .fdfrom(DateUtil.parseDate(this.fdfrom))
+                .fdto(DateUtil.parseDate(this.fdto))
                 .fcltynm(fcltynm)
-                .fcast(prfcast)
+                .fcast(fcast)
                 .prfage(this.prfage)
-                .story(sty)
+                .story(story)
                 .ticketPrice(finalTicketPrice)
                 .availableNOP(finalAvailableNOP)
                 .genrenm(genrenm)
-                .fstate(prfstate)
+                .fstate(fstate)
                 .updatedate(updatedDateTime)
                 .faddress(faddress)
                 .ticketPick(safeTicketPick)
                 .maxPurchase(safeMaxPurchase)
-                .posterFile(poster)
+                .posterFile(posterFile)
                 .contentFile(styurls != null ? styurls : new ArrayList<>())
                 .views(0)
                 .entrpsnmH(entrpsnmH)
-                .runningTime(prfruntime)
+                .runningTime(runningTime)
                 .build();
     }
 

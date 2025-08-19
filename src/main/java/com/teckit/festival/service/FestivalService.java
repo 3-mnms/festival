@@ -136,13 +136,13 @@ public class FestivalService {
         Festival festival = festivalRepository.findByFestivalDetail_Id(mt20id)
                 .orElse(Festival.builder().festivalDetail(savedDetail).build());
 
-        festival.setFname(dto.getPrfnm());
-        festival.setFdfrom(DateUtil.parseDate(dto.getPrfpdfrom()));
-        festival.setFdto(DateUtil.parseDate(dto.getPrfpdto()));
-        festival.setPosterFile(dto.getPoster());
+        festival.setFname(dto.getFname());
+        festival.setFdfrom(DateUtil.parseDate(dto.getFdfrom()));
+        festival.setFdto(DateUtil.parseDate(dto.getFdto()));
+        festival.setPosterFile(dto.getPosterFile());
         festival.setFcltynm(dto.getFcltynm());
         festival.setGenrenm(dto.getGenrenm());
-        festival.setFstate(dto.getPrfstate());
+        festival.setFstate(dto.getFstate());
         festival.setPrfage(dto.getPrfage());
 
         festivalRepository.save(festival);
