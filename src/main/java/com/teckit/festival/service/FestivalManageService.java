@@ -37,7 +37,7 @@ public class FestivalManageService {
 
     // 공연 등록 (기본정보 + 상세정보 + 일정)
     @Transactional
-    public FestivalDetailDTO registerFestivalWithDetails(FestivalRegisterDTO request, Long userId) { // 👈 반환 타입 변경
+    public FestivalDetailDTO registerFestivalWithDetails(FestivalRegisterDTO request, Long userId) {
         String fid = generateUniqueFid();
 
         var detailReq = request.getDetail();
@@ -119,7 +119,7 @@ public class FestivalManageService {
 
     // 공연 수정
     @Transactional
-    public FestivalDetailDTO updateFestival(String fid, FestivalRegisterDTO request, Long userId) { // 👈 반환 타입 변경
+    public FestivalDetailDTO updateFestival(String fid, FestivalRegisterDTO request, Long userId) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
@@ -204,15 +204,17 @@ public class FestivalManageService {
     }
 
     // 공연 목록 조회
-    public List<FestivalDTO> getFestivalsByRole(Long userId, boolean isAdmin) {
+    public List<FestivalDetailDTO> getFestivalsByRole(Long userId, boolean isAdmin) { // 👈 여기를 수정합니다.
         List<Festival> festivals;
         if (isAdmin) {
             festivals = festivalRepository.findAll();
         } else {
             festivals = festivalRepository.findByFestivalDetail_UserId(userId);
         }
+
+        // Festival 엔티티 리스트를 FestivalDetailDTO 리스트로 변환
         return festivals.stream()
-                .map(FestivalDTO::fromEntity)
+                .map(festival -> FestivalDetailDTO.fromEntity(festival.getFestivalDetail()))
                 .collect(Collectors.toList());
     }
 

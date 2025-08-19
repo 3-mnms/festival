@@ -95,7 +95,10 @@ public class FestivalManageController {
     public ResponseEntity<Map<String, Object>> getMyFestivals(Authentication authentication) {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
-        List<FestivalDTO> responseList = manageService.getFestivalsByRole(userId, admin);
+
+        // FestivalDetailDTO 리스트를 반환하도록 수정
+        List<FestivalDetailDTO> responseList = manageService.getFestivalsByRole(userId, admin);
+
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "📄 공연 목록 조회 성공",
