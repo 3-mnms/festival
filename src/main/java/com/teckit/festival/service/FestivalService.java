@@ -2,6 +2,7 @@ package com.teckit.festival.service;
 
 import com.teckit.festival.dto.response.*;
 import com.teckit.festival.kafka.FestivalKafkaProducer;
+import com.teckit.festival.repository.FestivalScheduleRepository;
 import com.teckit.festival.util.DateUtil;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Propagation;
@@ -36,6 +37,7 @@ public class FestivalService {
 
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository festivalDetailRepository;
+    private final FestivalScheduleRepository festivalScheduleRepository;
 
     private final RestClient restClient;
     private final FestivalKafkaProducer festivalKafkaProducer;
@@ -64,7 +66,9 @@ public class FestivalService {
         Festival f = d.getFestival();
         List<String> styurls = (d.getContentFile() == null) ? List.of() : d.getContentFile();
 
-        return FestivalDetailResponseDTO.of(f, d, styurls);
+        var schedules = festivalScheduleRepository.findByFid(fid);
+
+        return FestivalDetailResponseDTO.of(f, d, styurls, schedules);
     }
 
     /* ===================== 자동 수집 ===================== */

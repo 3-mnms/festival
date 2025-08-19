@@ -3,6 +3,7 @@ package com.teckit.festival.dto.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
+import com.teckit.festival.entity.FestivalSchedule;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -40,8 +41,16 @@ public class FestivalDetailResponseDTO {
     //private Integer views;
     //private String hostName;
     //private Integer likeCount;
+    private List<String> times;
+    private List<String> daysOfWeek;
 
-    public static FestivalDetailResponseDTO of(Festival f, FestivalDetail d, List<String> styurls) { // **
+
+    public static FestivalDetailResponseDTO of(
+            Festival f,
+            FestivalDetail d,
+            List<String> styurls,
+            List<FestivalSchedule> schedules
+    ) {
         return FestivalDetailResponseDTO.builder()
                 .fid(d.getId())
                 .prfnm(f.getFname())
@@ -61,9 +70,19 @@ public class FestivalDetailResponseDTO {
                 .contentFiles(styurls)
                 .entrpsnmH(d.getEntrpsnmH())
                 .runningTime(d.getRunningTime())
-                //.views(d.getViews() == null ? 0 : d.getViews())
-                //.hostName(null)
-                //.likeCount(null)
+                .times(
+                        schedules.stream()
+                                .map(FestivalSchedule::getTime) // time이 String이면 그대로
+                                .toList()
+                )
+                .daysOfWeek(
+                        schedules.stream()
+                                .map(s -> {
+                                    var dow = s.getDayOfWeek();     // FestivalScheduleDay enum
+                                    return (dow == null) ? null : dow.name(); // "MON","TUE"...
+                                })
+                                .toList()
+                )
                 .build();
     }
 }
