@@ -23,7 +23,6 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
     @EntityGraph(attributePaths = {"contentFile"})
     @Query("select d from FestivalDetail d where d.id = :fid")
     Optional<FestivalDetail> findGraphByFid(@Param("fid") String fid);
-    // 🎯 중복 fid 체크용
 
     boolean existsById(String fid);
 

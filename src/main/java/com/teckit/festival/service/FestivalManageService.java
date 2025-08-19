@@ -218,6 +218,20 @@ public class FestivalManageService {
                 .collect(Collectors.toList());
     }
 
+    // 공연 상세 조회
+    @Transactional
+    public FestivalDetailDTO getFestivalDetail(String fid, Long userId, boolean admin) {
+        FestivalDetail detail = detailRepository.findById(fid)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 공연입니다: " + fid));
+
+        // 권한 체크: HOST일 경우 자신(userId)의 공연만 조회 가능
+        if (!admin && !detail.getUserId().equals(userId)) {
+            throw new SecurityException("본인 공연만 조회할 수 있습니다.");
+        }
+
+        return FestivalDetailDTO.fromEntity(detail);
+    }
+
     // fid(PF000001) 자동 생성
     private String generateUniqueFid() {
         String fid;

@@ -105,4 +105,24 @@ public class FestivalManageController {
                 "data", responseList
         ));
     }
+
+    @Operation(summary = "공연 상세 조회", description = "fid(PF000001 등)를 통해 공연 상세 정보를 조회합니다.")
+    @PreAuthorize("hasAnyRole('HOST','ADMIN')")
+    @GetMapping("/manage/{fid}")
+    public ResponseEntity<Map<String, Object>> getFestivalDetail(
+            Authentication authentication,
+            @PathVariable String fid
+    ) {
+        Long userId = requireUserId(authentication);
+        boolean admin = isAdmin(authentication);
+
+        // 서비스에서 해당 fid 공연 상세 DTO를 조회
+        FestivalDetailDTO responseDto = manageService.getFestivalDetail(fid, userId, admin);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "🔎 공연 상세 조회 성공",
+                "data", responseDto
+        ));
+    }
 }
