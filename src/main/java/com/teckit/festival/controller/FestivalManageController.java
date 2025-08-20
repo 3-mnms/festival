@@ -1,7 +1,7 @@
 package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.request.FestivalRegisterDTO;
-import com.teckit.festival.dto.response.FestivalDetailDTO;
+import com.teckit.festival.dto.response.FestivalRegisterResponseDTO; // 1. Import the correct DTO
 import com.teckit.festival.service.FestivalManageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,7 +23,6 @@ public class FestivalManageController {
 
     private final FestivalManageService manageService;
 
-    // 헤더에서 전달된 userId를 사용하도록 수정
     private Long requireUserId(Authentication authentication) {
         try {
             return Long.parseLong(authentication.getName());
@@ -47,7 +46,8 @@ public class FestivalManageController {
             @RequestPart(value = "contentFiles", required = false) List<MultipartFile> contentFiles
     ) {
         Long userId = requireUserId(authentication);
-        FestivalDetailDTO responseDto = manageService.registerFestivalWithDetails(request, userId, posterFile, contentFiles);
+        // 2. Change method return type
+        FestivalRegisterResponseDTO responseDto = manageService.registerFestivalWithDetails(request, userId, posterFile, contentFiles);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "🎉 공연 등록 성공",
@@ -66,7 +66,8 @@ public class FestivalManageController {
             @RequestPart(value = "contentFiles", required = false) List<MultipartFile> contentFiles
     ) {
         Long userId = requireUserId(authentication);
-        FestivalDetailDTO responseDto = manageService.updateFestival(fid, request, userId, posterFile, contentFiles);
+        // 2. Change method return type
+        FestivalRegisterResponseDTO responseDto = manageService.updateFestival(fid, request, userId, posterFile, contentFiles);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "✏️ 공연 수정 성공",
@@ -97,7 +98,8 @@ public class FestivalManageController {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
 
-        List<FestivalDetailDTO> responseList = manageService.getFestivalsByRole(userId, admin);
+        // 2. Change method return type
+        List<FestivalRegisterResponseDTO> responseList = manageService.getFestivalsByRole(userId, admin);
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -116,7 +118,8 @@ public class FestivalManageController {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
 
-        FestivalDetailDTO responseDto = manageService.getFestivalDetail(fid, userId, admin);
+        // 2. Change method return type
+        FestivalRegisterResponseDTO responseDto = manageService.getFestivalDetail(fid, userId, admin);
 
         return ResponseEntity.ok(Map.of(
                 "success", true,

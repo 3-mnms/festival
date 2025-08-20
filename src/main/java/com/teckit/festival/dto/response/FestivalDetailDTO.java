@@ -53,8 +53,8 @@ public class FestivalDetailDTO {
     @XmlElement(name = "prfage")
     private String prfage;
 
-    @XmlElement(name = "pcseguidance")
-    private String pcseguidance;
+    //@XmlElement(name = "pcseguidance")
+    //private String pcseguidance;
 
     @XmlElement(name = "poster")
     private String posterFile;
@@ -79,7 +79,7 @@ public class FestivalDetailDTO {
 
     @XmlElementWrapper(name = "styurls")
     @XmlElement(name = "styurl")
-    private List<String> styurls;
+    private List<String> contentFile;
 
     // 내부 전용 필드
     private Long userId;
@@ -95,17 +95,21 @@ public class FestivalDetailDTO {
         // 기본값 보정
         int safeTicketPick   = (this.ticketPick   <= 0) ? 1 : this.ticketPick;
         int safeMaxPurchase  = (this.maxPurchase  <= 0) ? 1 : this.maxPurchase;
-        int safeAvailableNOP = (this.availableNOP <  0) ? 0 : this.availableNOP;
 
         int finalAvailableNOP = Math.max(0, availableNOP);
         int finalTicketPrice  = ticketPrice;
 
-        LocalDateTime updatedDateTime;
+        LocalDateTime updatedDateTime = null;
         if (this.updatedate != null && !this.updatedate.isBlank()) {
-            String cleaned = this.updatedate.contains(".")
-                    ? this.updatedate.substring(0, this.updatedate.indexOf("."))
-                    : this.updatedate;
-            updatedDateTime = LocalDateTime.parse(cleaned, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            try {
+                // 소수점 이하 초를 처리하기 위한 패턴으로 변경
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS]");
+                updatedDateTime = LocalDateTime.parse(this.updatedate, formatter);
+            } catch (Exception e) {
+                // 파싱 실패 시 예외 처리
+                System.err.println("updatedate 파싱 실패: " + this.updatedate + " - " + e.getMessage());
+                updatedDateTime = LocalDateTime.now();
+            }
         } else {
             updatedDateTime = LocalDateTime.now();
         }
@@ -130,7 +134,7 @@ public class FestivalDetailDTO {
                 .ticketPick(safeTicketPick)
                 .maxPurchase(safeMaxPurchase)
                 .posterFile(posterFile)
-                .contentFile(styurls != null ? styurls : new ArrayList<>())
+                .contentFile(contentFile != null ? contentFile : new ArrayList<>())
                 .views(0)
                 .entrpsnmH(entrpsnmH)
                 .runningTime(runningTime)
@@ -158,7 +162,7 @@ public class FestivalDetailDTO {
                 .ticketPick(entity.getTicketPick())
                 .maxPurchase(entity.getMaxPurchase())
                 .posterFile(entity.getPosterFile())
-                .styurls(entity.getContentFile())
+                .contentFile(entity.getContentFile())
                 .entrpsnmH(entity.getEntrpsnmH())
                 .runningTime(entity.getRunningTime())
                 .build();

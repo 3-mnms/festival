@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,19 +57,17 @@ public class FestivalService {
     }
 
     public Page<FestivalListResponseDTO> getFestivals(Pageable pageable) {
-        return festivalRepository.findList(pageable); // **(수정) 엔티티 → DTO 페이지**
+        return festivalRepository.findList(pageable);
     }
 
-    public FestivalDetailResponseDTO getFestivalDetail(String fid) {
+    public FestivalRegisterResponseDTO getFestivalDetail(String fid) {
         FestivalDetail d = festivalDetailRepository.findGraphByFid(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         Festival f = d.getFestival();
-        List<String> styurls = (d.getContentFile() == null) ? List.of() : d.getContentFile();
+        List<FestivalSchedule> schedules = d.getSchedules();
 
-        var schedules = festivalScheduleRepository.findByFid(fid);
-
-        return FestivalDetailResponseDTO.of(f, d, styurls, schedules);
+        return FestivalRegisterResponseDTO.fromEntity(f, d, schedules);
     }
 
     /* ===================== 자동 수집 ===================== */
@@ -91,9 +90,9 @@ public class FestivalService {
         Optional<FestivalDetail> existing = festivalDetailRepository.findByIdWithSchedules(mt20id);
 
         // 3. 업데이트 필요 여부 체크
-        if (existing.isPresent()
-                && dto.getUpdatedate() != null
-                && dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
+        // updatedate가 null일 수 있으므로 null 체크를 강화
+        if (existing.isPresent() && dto.getUpdatedate() != null && dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
+            log.info("ℹ️ 이미 최신 데이터(id={})", mt20id);
             return;
         }
 
@@ -105,6 +104,8 @@ public class FestivalService {
 
         // 5. Entity 변환
         FestivalDetail detail = dto.toEntity(price, nop);
+        LocalDate fdfrom = DateUtil.parseDate(dto.getFdfrom());
+        LocalDate fdto = DateUtil.parseDate(dto.getFdto());
 
         // 6. 스케줄 설정 (기존 DB 값이 있으면 그대로 사용)
         if (existing.isPresent()) {
@@ -112,14 +113,14 @@ public class FestivalService {
 
             // DB에 이미 스케줄이 있으면 추가 생성 안 함
             if (existingDetail.getSchedules() != null && !existingDetail.getSchedules().isEmpty()) {
-                detail.setSchedules(existingDetail.getSchedules()); // 그대로 복사 (필요 시)
+                detail.setSchedules(existingDetail.getSchedules()); // 그대로 복사
             } else {
                 // DB에도 없으면 랜덤 생성
-                detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail));
+                detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail, fdfrom, fdto));
             }
         } else {
             // 기존 Detail이 없으면 무조건 랜덤 생성
-            detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail));
+            detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail, fdfrom, fdto));
         }
 
         // 7. 저장
@@ -137,8 +138,8 @@ public class FestivalService {
                 .orElse(Festival.builder().festivalDetail(savedDetail).build());
 
         festival.setFname(dto.getFname());
-        festival.setFdfrom(DateUtil.parseDate(dto.getFdfrom()));
-        festival.setFdto(DateUtil.parseDate(dto.getFdto()));
+        festival.setFdfrom(fdfrom);
+        festival.setFdto(fdto);
         festival.setPosterFile(dto.getPosterFile());
         festival.setFcltynm(dto.getFcltynm());
         festival.setGenrenm(dto.getGenrenm());
@@ -146,6 +147,7 @@ public class FestivalService {
         festival.setPrfage(dto.getPrfage());
 
         festivalRepository.save(festival);
+        log.info("✅ 공연 상세 저장 및 갱신 성공(id={})", mt20id);
     }
 
     @Transactional
@@ -174,7 +176,10 @@ public class FestivalService {
                 || response.getFestivalDetailList().isEmpty()) {
             return null;
         }
-        return response.getFestivalDetailList().get(0);
+
+        FestivalDetailDTO dto = response.getFestivalDetailList().get(0);
+        log.info("API 응답 updatedate 값: {}", dto.getUpdatedate()); // updatedate 값 확인을 위한 로그 추가
+        return dto;
     }
 
     // 기간으로 ID 수집
@@ -192,8 +197,8 @@ public class FestivalService {
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
-                //100*2 = 200개 수집 (수정 가능)
-                .queryParam("rows", "1")
+                // values * 2 개 조회
+                .queryParam("rows", "5")
                 .toUriString();
 
         FestivalListDTO list = fetchAndParseXml(restClient, uri, FestivalListDTO.class);

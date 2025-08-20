@@ -1,5 +1,7 @@
 package com.teckit.festival.enumeration;
 
+import java.time.DayOfWeek;
+
 public enum FestivalScheduleDay {
     MON("월"),
     TUE("화"),
@@ -25,5 +27,10 @@ public enum FestivalScheduleDay {
             if (kor.startsWith(day.label)) return day;
         }
         throw new IllegalArgumentException("지원하지 않는 요일: " + kor);
+    }
+
+    // DayOfWeek를 FestivalScheduleDay로 변환하는 메서드 수정
+    public static FestivalScheduleDay fromDayOfWeek(DayOfWeek dayOfWeek) {
+        return FestivalScheduleDay.valueOf(dayOfWeek.name().substring(0, 3));
     }
 }

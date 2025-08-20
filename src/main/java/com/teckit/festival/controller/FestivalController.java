@@ -1,13 +1,13 @@
 package com.teckit.festival.controller;
 
-import com.teckit.festival.dto.response.FestivalDetailResponseDTO;
 import com.teckit.festival.dto.response.FestivalListResponseDTO;
+import com.teckit.festival.dto.response.FestivalRegisterResponseDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
 import com.teckit.festival.service.FestivalService;
 import com.teckit.festival.util.ApiResponseUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +21,7 @@ import java.util.Map;
 
 @Tag(name = "공연 조회 API", description = "공연 목록 / 상세 / 카테고리 / 검색 / 조회수 API")
 @RestController
-@AllArgsConstructor
+@RequiredArgsConstructor
 @RequestMapping("/api/festival")
 public class FestivalController {
 
@@ -88,7 +88,7 @@ public class FestivalController {
     public ResponseEntity<SuccessResponse<Page<FestivalListResponseDTO>>> getFestivals(
             @RequestParam(required = false) String sort
     ) {
-        Sort sortOption = toSort(sort);                      // ← 여기서 'fid'를 'festivalDetail.id'로 매핑
+        Sort sortOption = toSort(sort);
         Pageable pageable = PageRequest.of(0, 15, sortOption);
         Page<FestivalListResponseDTO> page = festivalService.getFestivals(pageable);
         return ApiResponseUtil.success(page, "페스티벌 목록 조회 성공");
@@ -96,10 +96,10 @@ public class FestivalController {
 
     @Operation(summary = "공연 상세 조회", description = "공연 ID(fid)로 상세 정보를 조회합니다.")
     @GetMapping("/{fid}")
-    public ResponseEntity<SuccessResponse<FestivalDetailResponseDTO>> getFestivalDetail(
+    public ResponseEntity<SuccessResponse<FestivalRegisterResponseDTO>> getFestivalDetail(
             @PathVariable("fid") String fid
     ) {
-        FestivalDetailResponseDTO detail = festivalService.getFestivalDetail(fid);
+        FestivalRegisterResponseDTO detail = festivalService.getFestivalDetail(fid);
         return ApiResponseUtil.success(detail);
     }
 
