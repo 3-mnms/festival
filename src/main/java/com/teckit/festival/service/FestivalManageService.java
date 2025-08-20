@@ -18,6 +18,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.ArrayList;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,10 +36,19 @@ public class FestivalManageService {
     private final FestivalDetailRepository detailRepository;
     private final FestivalScheduleRepository scheduleRepository;
     private final FestivalKafkaProducer kafkaProducer;
+    private final FileUploadService fileUploadService;
 
     // 공연 등록 (기본정보 + 상세정보 + 일정)
     @Transactional
-    public FestivalDetailDTO registerFestivalWithDetails(FestivalRegisterDTO request, Long userId) {
+    public FestivalDetailDTO registerFestivalWithDetails(FestivalRegisterDTO request, Long userId, MultipartFile posterFile, List<MultipartFile> contentFiles) {
+        String posterUrl = (posterFile != null && !posterFile.isEmpty()) ? fileUploadService.uploadFile(posterFile) : null;
+        List<String> contentUrls = new ArrayList<>();
+        if (contentFiles != null && !contentFiles.isEmpty()) {
+            for (MultipartFile file : contentFiles) {
+                contentUrls.add(fileUploadService.uploadFile(file));
+            }
+        }
+
         String fid = generateUniqueFid();
 
         var detailReq = request.getDetail();
@@ -70,8 +81,8 @@ public class FestivalManageService {
                 .ticketPick(safeTicketPick)
                 .maxPurchase(safeMaxPurchase)
                 .prfage(detailReq.getPrfage())
-                .posterFile(request.getPosterFile())
-                .contentFile(detailReq.getContentFile())
+                .posterFile(posterUrl)
+                .contentFile(contentUrls)
                 .entrpsnmH(detailReq.getEntrpsnmH())
                 .runningTime(detailReq.getRunningTime())
                 .updatedate( (detailReq.getUpdatedate()!=null && !detailReq.getUpdatedate().isBlank())
@@ -96,7 +107,7 @@ public class FestivalManageService {
                 .fname(request.getFname())
                 .fdfrom(fdfrom)
                 .fdto(fdto)
-                .posterFile(request.getPosterFile())
+                .posterFile(posterUrl)
                 .fcltynm(request.getFcltynm())
                 .genrenm(request.getGenrenm())
                 .fstate(computedState)
@@ -110,20 +121,17 @@ public class FestivalManageService {
         FestivalDetail persisted = detailRepository.findById(fid)
                 .orElseThrow(() -> new IllegalStateException("Saved detail not found: " + fid));
 
-        // 전송 대상: 저장 후 객체(persisted)
         kafkaProducer.send(persisted, "FESTIVAL_CREATED");
 
-        // FestivalDetailDTO로 변환하여 반환
         return FestivalDetailDTO.fromEntity(persisted);
     }
 
     // 공연 수정
     @Transactional
-    public FestivalDetailDTO updateFestival(String fid, FestivalRegisterDTO request, Long userId) {
+    public FestivalDetailDTO updateFestival(String fid, FestivalRegisterDTO request, Long userId, MultipartFile posterFile, List<MultipartFile> contentFiles) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        // 본인 소유 공연인지 확인
         if (!festival.getFestivalDetail().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.NOT_OWNER);
         }
@@ -131,6 +139,14 @@ public class FestivalManageService {
         var detailReq = request.getDetail();
         if (detailReq == null) {
             throw new IllegalArgumentException("detail is required");
+        }
+
+        String posterUrl = (posterFile != null && !posterFile.isEmpty()) ? fileUploadService.uploadFile(posterFile) : festival.getPosterFile();
+        List<String> contentUrls = new ArrayList<>();
+        if (contentFiles != null && !contentFiles.isEmpty()) {
+            for (MultipartFile file : contentFiles) {
+                contentUrls.add(fileUploadService.uploadFile(file));
+            }
         }
 
         LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
@@ -142,7 +158,8 @@ public class FestivalManageService {
         detail.setFdfrom(fdfrom);
         detail.setFdto(fdto);
         detail.setFcltynm(request.getFcltynm());
-        detail.setPosterFile(request.getPosterFile());
+        detail.setPosterFile(posterUrl);
+        detail.setContentFile(contentUrls);
         detail.setGenrenm(request.getGenrenm());
         detail.setFstate(computedState);
         detail.setPrfage(detailReq.getPrfage());
@@ -150,6 +167,14 @@ public class FestivalManageService {
         detail.setTicketPick(Math.max(1, detailReq.getTicketPick()));
         detail.setMaxPurchase(Math.max(1, detailReq.getMaxPurchase()));
         detail.setTicketPrice(detailReq.getTicketPrice());
+
+        // **누락된 필드 업데이트**
+        detail.setStory(detailReq.getStory());
+        detail.setFcast(detailReq.getFcast());
+        detail.setRunningTime(detailReq.getRunningTime());
+        detail.setEntrpsnmH(detailReq.getEntrpsnmH());
+        detail.setAvailableNOP(Math.max(0, detailReq.getAvailableNOP()));
+
         detail.setUpdatedate(
                 detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
                         ? LocalDateTime.parse(
@@ -172,7 +197,7 @@ public class FestivalManageService {
         festival.setFname(request.getFname());
         festival.setFdfrom(fdfrom);
         festival.setFdto(fdto);
-        festival.setPosterFile(request.getPosterFile());
+        festival.setPosterFile(posterUrl);
         festival.setFcltynm(request.getFcltynm());
         festival.setGenrenm(request.getGenrenm());
         festival.setPrfage(detailReq.getPrfage());
@@ -183,7 +208,6 @@ public class FestivalManageService {
 
         kafkaProducer.send(festival.getFestivalDetail(), "FESTIVAL_UPDATED");
 
-        // FestivalDetailDTO로 변환하여 반환
         return FestivalDetailDTO.fromEntity(festival.getFestivalDetail());
     }
 
@@ -204,7 +228,7 @@ public class FestivalManageService {
     }
 
     // 공연 목록 조회
-    public List<FestivalDetailDTO> getFestivalsByRole(Long userId, boolean isAdmin) { // 👈 여기를 수정합니다.
+    public List<FestivalDetailDTO> getFestivalsByRole(Long userId, boolean isAdmin) {
         List<Festival> festivals;
         if (isAdmin) {
             festivals = festivalRepository.findAll();
@@ -212,7 +236,6 @@ public class FestivalManageService {
             festivals = festivalRepository.findByFestivalDetail_UserId(userId);
         }
 
-        // Festival 엔티티 리스트를 FestivalDetailDTO 리스트로 변환
         return festivals.stream()
                 .map(festival -> FestivalDetailDTO.fromEntity(festival.getFestivalDetail()))
                 .collect(Collectors.toList());
@@ -224,7 +247,6 @@ public class FestivalManageService {
         FestivalDetail detail = detailRepository.findById(fid)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 공연입니다: " + fid));
 
-        // 권한 체크: HOST일 경우 자신(userId)의 공연만 조회 가능
         if (!admin && !detail.getUserId().equals(userId)) {
             throw new SecurityException("본인 공연만 조회할 수 있습니다.");
         }
@@ -254,7 +276,7 @@ public class FestivalManageService {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
         if (fdfrom == null || fdto == null) return "공연예정";
         if (today.isBefore(fdfrom)) return "공연예정";
-        if (today.isAfter(fdto))   return "공연완료";
+        if (today.isAfter(fdto)) return "공연완료";
         return "공연중";
     }
 }

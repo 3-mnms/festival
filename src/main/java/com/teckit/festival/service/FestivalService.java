@@ -193,7 +193,7 @@ public class FestivalService {
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
                 //100*2 = 200개 수집 (수정 가능)
-                .queryParam("rows", "10")
+                .queryParam("rows", "1")
                 .toUriString();
 
         FestivalListDTO list = fetchAndParseXml(restClient, uri, FestivalListDTO.class);

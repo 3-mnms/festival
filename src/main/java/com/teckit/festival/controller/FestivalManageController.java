@@ -1,8 +1,7 @@
 package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.request.FestivalRegisterDTO;
-import com.teckit.festival.dto.response.FestivalDTO;
-import com.teckit.festival.dto.response.FestivalDetailDTO; // FestivalDetailDTO import 추가
+import com.teckit.festival.dto.response.FestivalDetailDTO;
 import com.teckit.festival.service.FestivalManageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +23,7 @@ public class FestivalManageController {
 
     private final FestivalManageService manageService;
 
+    // 헤더에서 전달된 userId를 사용하도록 수정
     private Long requireUserId(Authentication authentication) {
         try {
             return Long.parseLong(authentication.getName());
@@ -38,38 +39,38 @@ public class FestivalManageController {
 
     @Operation(summary = "공연 등록", description = "공연 기본정보, 상세정보, 일정을 통합 등록합니다.")
     @PreAuthorize("hasRole('HOST')")
-    @PostMapping("/manage")
+    @PostMapping(value = "/manage", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> registerFestival(
             Authentication authentication,
-            @RequestBody FestivalRegisterDTO request
+            @RequestPart("requestDTO") FestivalRegisterDTO request,
+            @RequestPart(value = "posterFile", required = false) MultipartFile posterFile,
+            @RequestPart(value = "contentFiles", required = false) List<MultipartFile> contentFiles
     ) {
         Long userId = requireUserId(authentication);
-        // registerFestivalWithDetails 메서드는 FestivalDetailDTO를 반환하도록 수정되었습니다.
-        // 그 반환값을 그대로 응답 데이터로 사용합니다.
-        FestivalDetailDTO responseDto = manageService.registerFestivalWithDetails(request, userId);
+        FestivalDetailDTO responseDto = manageService.registerFestivalWithDetails(request, userId, posterFile, contentFiles);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "🎉 공연 등록 성공",
-                "data", responseDto // DTO 객체를 바로 응답
+                "data", responseDto
         ));
     }
 
     @Operation(summary = "공연 수정 (주최자)", description = "공연 fid(PF000001 등)를 통해 공연 기본/상세/일정 정보를 수정합니다.")
     @PreAuthorize("hasRole('HOST')")
-    @PutMapping("/manage/{fid}")
+    @PutMapping(value = "/manage/{fid}", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> updateFestival(
             Authentication authentication,
             @PathVariable String fid,
-            @RequestBody FestivalRegisterDTO request
+            @RequestPart("requestDTO") FestivalRegisterDTO request,
+            @RequestPart(value = "posterFile", required = false) MultipartFile posterFile,
+            @RequestPart(value = "contentFiles", required = false) List<MultipartFile> contentFiles
     ) {
         Long userId = requireUserId(authentication);
-        // updateFestival 메서드는 FestivalDetailDTO를 반환하도록 수정되었습니다.
-        // 그 반환값을 그대로 응답 데이터로 사용합니다.
-        FestivalDetailDTO responseDto = manageService.updateFestival(fid, request, userId);
+        FestivalDetailDTO responseDto = manageService.updateFestival(fid, request, userId, posterFile, contentFiles);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "✏️ 공연 수정 성공",
-                "data", responseDto // DTO 객체를 바로 응답
+                "data", responseDto
         ));
     }
 
@@ -96,7 +97,6 @@ public class FestivalManageController {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
 
-        // FestivalDetailDTO 리스트를 반환하도록 수정
         List<FestivalDetailDTO> responseList = manageService.getFestivalsByRole(userId, admin);
 
         return ResponseEntity.ok(Map.of(
@@ -116,7 +116,6 @@ public class FestivalManageController {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
 
-        // 서비스에서 해당 fid 공연 상세 DTO를 조회
         FestivalDetailDTO responseDto = manageService.getFestivalDetail(fid, userId, admin);
 
         return ResponseEntity.ok(Map.of(

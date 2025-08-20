@@ -1,7 +1,5 @@
 package com.teckit.festival.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -32,9 +30,6 @@ public class FestivalRegisterDTO {
 
     @Schema(description = "포스터 이미지 URL", example = "https://example.com/poster.jpg")
     private String posterFile;
-
-    //@Schema(description = "공연 지역", example = "서울")
-    //private String area;
 
     @Schema(description = "공연장 이름", example = "세종문화회관")
     private String fcltynm;
@@ -82,9 +77,6 @@ public class FestivalRegisterDTO {
 
         @Schema(description = "관람 연령", example = "만 12세 이상")
         private String prfage;
-
-        //@Schema(description = "공연 상태", example = "공연예정")
-        //private String prfstate;
 
         @Schema(description = "수용 가능 인원", example = "300")
         @Min(0)
