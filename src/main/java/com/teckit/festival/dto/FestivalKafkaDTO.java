@@ -25,7 +25,7 @@ public class FestivalKafkaDTO {
     @Getter @Setter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class ScheduleDTO {
-        private Long scheduleId;   // festival_schedule PK
+        //private Long scheduleId;   // festival_schedule PK
         private String dayOfWeek;  // "MON"
         private String time;       // "12:00"
     }
