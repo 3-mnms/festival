@@ -1,5 +1,6 @@
 package com.teckit.festival.controller;
 
+import com.teckit.festival.dto.response.FestivalDetailResponseDTO;
 import com.teckit.festival.dto.response.FestivalListResponseDTO;
 import com.teckit.festival.dto.response.FestivalRegisterResponseDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
@@ -96,10 +97,10 @@ public class FestivalController {
 
     @Operation(summary = "공연 상세 조회", description = "공연 ID(fid)로 상세 정보를 조회합니다.")
     @GetMapping("/{fid}")
-    public ResponseEntity<SuccessResponse<FestivalRegisterResponseDTO>> getFestivalDetail(
+    public ResponseEntity<SuccessResponse<FestivalDetailResponseDTO>> getFestivalDetail(
             @PathVariable("fid") String fid
     ) {
-        FestivalRegisterResponseDTO detail = festivalService.getFestivalDetail(fid);
+        FestivalDetailResponseDTO detail = festivalService.getFestivalDetail(fid);
         return ApiResponseUtil.success(detail);
     }
 

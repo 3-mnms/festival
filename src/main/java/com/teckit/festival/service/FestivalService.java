@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.teckit.festival.util.XmlApiUtil.fetchAndParseXml;
 
@@ -60,14 +61,16 @@ public class FestivalService {
         return festivalRepository.findList(pageable);
     }
 
-    public FestivalRegisterResponseDTO getFestivalDetail(String fid) {
+    public FestivalDetailResponseDTO getFestivalDetail(String fid) {
         FestivalDetail d = festivalDetailRepository.findGraphByFid(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         Festival f = d.getFestival();
-        List<FestivalSchedule> schedules = d.getSchedules();
+        List<String> styurls = (d.getContentFile() == null) ? List.of() : d.getContentFile();
 
-        return FestivalRegisterResponseDTO.fromEntity(f, d, schedules);
+        var schedules = festivalScheduleRepository.findByFid(fid);
+
+        return FestivalDetailResponseDTO.of(f, d, styurls, schedules);
     }
 
     /* ===================== 자동 수집 ===================== */
