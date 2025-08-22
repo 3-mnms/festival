@@ -53,6 +53,7 @@ jobs:
             type=raw,value=${{ env.TAG_AMD }}
             type=raw,value=${{ env.TAG_ARM }}
             type=raw,value=latest
+            type=raw,value=v0.1
             type=sha
             type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
 
