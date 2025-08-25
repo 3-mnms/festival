@@ -82,7 +82,6 @@ public class FestivalDetail {
                         ? new ArrayList<>()
                         : this.schedules.stream()
                         .map(s -> FestivalKafkaDTO.ScheduleDTO.builder()
-                                //.scheduleId(s.getId())                // PK
                                 .dayOfWeek(s.getDayOfWeek().name())    // Enum → String
                                 .time(s.getTime())                     // "12:00"
                                 .build())

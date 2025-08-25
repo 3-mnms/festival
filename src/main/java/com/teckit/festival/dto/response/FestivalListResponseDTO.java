@@ -1,3 +1,4 @@
+// 홈페이지 내 공연 리스트 조회용 응답 DTO
 package com.teckit.festival.dto.response;
 
 import com.teckit.festival.entity.Festival;
@@ -20,7 +21,7 @@ public class FestivalListResponseDTO {
 
     public static FestivalListResponseDTO fromEntity(Festival festival) {
         return FestivalListResponseDTO.builder()
-                .fid(festival.getFestivalDetail() != null ? festival.getFestivalDetail().getId() : null)  // **
+                .fid(festival.getFestivalDetail() != null ? festival.getFestivalDetail().getId() : null)
                 .prfnm(festival.getFname())
                 .prfpdfrom(festival.getFdfrom())
                 .prfpdto(festival.getFdto())

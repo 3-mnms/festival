@@ -1,3 +1,4 @@
+// 공연 관리용 응답 DTO
 package com.teckit.festival.dto.response;
 
 import com.teckit.festival.entity.Festival;

@@ -20,12 +20,11 @@ public class FestivalKafkaDTO {
     private int maxPurchase;
     private int ticketPrice;
     private int availableNOP;
-    private List<ScheduleDTO> schedules; // 문자열 대신 객체
+    private List<ScheduleDTO> schedules;
 
     @Getter @Setter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class ScheduleDTO {
-        //private Long scheduleId;   // festival_schedule PK
         private String dayOfWeek;  // "MON"
         private String time;       // "12:00"
     }

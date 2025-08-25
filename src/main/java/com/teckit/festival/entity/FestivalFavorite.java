@@ -21,9 +21,9 @@ public class FestivalFavorite extends BaseEntity {
     private Long id;
 
     // 공연 식별자
-    @Column(name = "fid", nullable = false)
-    private String fid;
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fid")
+    private FestivalDetail festivalDetail;
 
     // 관심 상품 등록한 사용자 ID
     @Column(name = "user_id", nullable = false)

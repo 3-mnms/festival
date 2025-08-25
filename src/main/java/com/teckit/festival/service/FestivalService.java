@@ -26,6 +26,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +43,6 @@ public class FestivalService {
     private final FestivalRepository festivalRepository;
     private final FestivalDetailRepository festivalDetailRepository;
     private final FestivalScheduleRepository festivalScheduleRepository;
-
     private final RestClient restClient;
     private final FestivalKafkaProducer festivalKafkaProducer;
     private final FavoriteService favoriteService;
@@ -56,21 +57,20 @@ public class FestivalService {
     @Transactional(readOnly = true)
     public Festival getFestivalByFid(String fid) {
         return festivalRepository.findByFestivalDetail_Id(fid)
-                .orElseThrow(() -> new EntityNotFoundException("공연을 찾을 수 없습니다. fid=" + fid));
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
     }
 
     public Page<FestivalListResponseDTO> getFestivals(Pageable pageable) {
         return festivalRepository.findList(pageable);
     }
 
-
     public FestivalDetailResponseDTO getFestivalDetail(String fid) {
         return getFestivalDetail(fid, null); // 사용자 정보 없음 → favorited=false 로 내려감
     }
 
-
     @Transactional(readOnly = true)
     public FestivalDetailResponseDTO getFestivalDetail(String fid, Long userId) {
+        // 기존의 EntityNotFoundException 대신 BusinessException 사용
         FestivalDetail d = festivalDetailRepository.findGraphByFid(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
@@ -82,7 +82,6 @@ public class FestivalService {
         boolean favorited = (userId != null) && favoriteService.readFavorites(fid, userId);
 
         FestivalDetailResponseDTO dto = FestivalDetailResponseDTO.of(f, d, styurls, schedules);
-
         dto.setFavoriteCount(favoriteCount);
         dto.setFavorited(favorited);
 
@@ -94,71 +93,108 @@ public class FestivalService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void fetchAndSaveFestivalDetail(String mt20id) {
         if (mt20id == null || mt20id.isBlank()) {
-            log.warn("⚠️ mt20id 비어있음 → return");
+            log.warn("mt20id 비어있음 → return");
             return;
         }
 
         // 1. 상세 API 호출
         FestivalDetailDTO dto = fetchFestivalDetail(mt20id);
         if (dto == null) {
-            log.warn("⚠️ 상세 없음: {} → return", mt20id);
+            log.warn("상세 없음: {} → return", mt20id);
             return;
         }
 
-        // 2. 기존 데이터 schedules까지 fetch join으로 로딩
+        // 2. 기존 데이터 로딩 (스케줄 포함)
         Optional<FestivalDetail> existing = festivalDetailRepository.findByIdWithSchedules(mt20id);
 
-        // 3. 업데이트 필요 여부 체크
-        // updatedate가 null일 수 있으므로 null 체크를 강화
-        if (existing.isPresent() && dto.getUpdatedate() != null && dto.getUpdatedate().equals(existing.get().getUpdatedate())) {
-            log.info("ℹ️ 이미 최신 데이터(id={})", mt20id);
-            return;
-        }
-
-        // 4. 가격/좌석수 보정
-        int price = (dto.getTicketPrice() > 0) ? dto.getTicketPrice()
-                : FestivalScheduleGenerator.generateRandomPrice();
-        int nop = (dto.getAvailableNOP() > 0) ? dto.getAvailableNOP()
-                : FestivalScheduleGenerator.generateRandomAvailableNOP();
-
-        // 5. Entity 변환
-        FestivalDetail detail = dto.toEntity(price, nop);
-        LocalDate fdfrom = DateUtil.parseDate(dto.getFdfrom());
-        LocalDate fdto = DateUtil.parseDate(dto.getFdto());
-
-        // 6. 스케줄 설정 (기존 DB 값이 있으면 그대로 사용)
-        if (existing.isPresent()) {
-            FestivalDetail existingDetail = existing.get();
-
-            // DB에 이미 스케줄이 있으면 추가 생성 안 함
-            if (existingDetail.getSchedules() != null && !existingDetail.getSchedules().isEmpty()) {
-                detail.setSchedules(existingDetail.getSchedules()); // 그대로 복사
-            } else {
-                // DB에도 없으면 랜덤 생성
-                detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail, fdfrom, fdto));
+        // 3. 업데이트 필요 여부 체크 (updatedate 기준)
+        if (existing.isPresent() && dto.getUpdatedate() != null) {
+            try {
+                // DTO의 String updatedate를 LocalDateTime으로 변환
+                LocalDateTime dtoUpdatedate = LocalDateTime.parse(
+                        dto.getUpdatedate().substring(0, 19),
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                );
+                // 기존 엔티티의 LocalDateTime updatedate와 비교
+                if (dtoUpdatedate.equals(existing.get().getUpdatedate())) {
+                    log.info("이미 최신 데이터(id={})", mt20id);
+                    return;
+                }
+            } catch (Exception e) {
+                log.error("updatedate 파싱 실패: {} → 계속 진행", dto.getUpdatedate());
+                // 파싱 실패 시에는 업데이트가 필요하다고 판단하고 계속 진행
             }
-        } else {
-            // 기존 Detail이 없으면 무조건 랜덤 생성
-            detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail, fdfrom, fdto));
         }
 
-        // 7. 저장
-        festivalDetailRepository.saveAndFlush(detail);
+        // 4. Entity 생성 또는 업데이트
+        FestivalDetail detail;
+        boolean isNew = existing.isEmpty(); // 새로운 데이터인지 여부를 확인
 
-        // 8. 재조회하여 PK가 채워진 schedules 가져오기
-        FestivalDetail savedDetail = festivalDetailRepository.findByIdWithSchedules(detail.getId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        if (isNew) {
+            // 기존 데이터가 없는 경우: 새로운 엔티티를 생성하고 랜덤 값 주입
+            int price = (dto.getTicketPrice() > 0) ? dto.getTicketPrice() : FestivalScheduleGenerator.generateRandomPrice();
+            int nop = (dto.getAvailableNOP() > 0) ? dto.getAvailableNOP() : FestivalScheduleGenerator.generateRandomAvailableNOP();
+            detail = dto.toEntity(price, nop);
 
-        // 9. Kafka 전송
-        festivalKafkaProducer.send(savedDetail, "FESTIVAL_CREATED");
+            // 스케줄 설정 (최초 생성 시에만)
+            LocalDate fdfrom = DateUtil.parseDate(dto.getFdfrom());
+            LocalDate fdto = DateUtil.parseDate(dto.getFdto());
+            detail.setSchedules(FestivalScheduleGenerator.generateRandomSchedules(detail, fdfrom, fdto));
 
-        // 10. Festival 테이블 갱신
+        } else {
+            // 기존 데이터가 있는 경우: 기존 엔티티를 가져와 DTO 값으로 업데이트
+            detail = existing.get();
+            // toEntity()와 동일한 역할을 하되, 기존에 저장된 price와 nop는 변경하지 않음
+            detail.setFcltyid(dto.getFcltyid());
+            detail.setFname(dto.getFname());
+            detail.setFdfrom(DateUtil.parseDate(dto.getFdfrom()));
+            detail.setFdto(DateUtil.parseDate(dto.getFdto()));
+            detail.setFcltynm(dto.getFcltynm());
+            detail.setFcast(dto.getFcast());
+            detail.setPrfage(dto.getPrfage());
+            detail.setStory(dto.getStory());
+            detail.setGenrenm(dto.getGenrenm());
+            detail.setFstate(dto.getFstate());
+            detail.setPosterFile(dto.getPosterFile());
+            detail.setContentFile(dto.getContentFile());
+            detail.setEntrpsnmH(dto.getEntrpsnmH());
+            detail.setRunningTime(dto.getRunningTime());
+
+            // updatedate도 최신 값으로 업데이트
+            LocalDateTime updatedDateTime = null;
+            if (dto.getUpdatedate() != null && !dto.getUpdatedate().isBlank()) {
+                try {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS]");
+                    updatedDateTime = LocalDateTime.parse(dto.getUpdatedate(), formatter);
+                } catch (Exception e) {
+                    System.err.println("updatedate 파싱 실패: " + dto.getUpdatedate() + " - " + e.getMessage());
+                    updatedDateTime = LocalDateTime.now();
+                }
+            } else {
+                updatedDateTime = LocalDateTime.now();
+            }
+            detail.setUpdatedate(updatedDateTime);
+
+        }
+
+        // 5. 저장
+        FestivalDetail savedDetail = festivalDetailRepository.saveAndFlush(detail);
+
+        // 6. Kafka 전송
+        String eventType = isNew ? "FESTIVAL_CREATED" : "FESTIVAL_UPDATED";
+        try {
+            festivalKafkaProducer.send(savedDetail, eventType);
+        } catch (Exception e) {
+            log.error("Kafka 이벤트 발행 실패: {}", e.getMessage(), e);
+        }
+
+        // 7. Festival 테이블 갱신
         Festival festival = festivalRepository.findByFestivalDetail_Id(mt20id)
                 .orElse(Festival.builder().festivalDetail(savedDetail).build());
 
         festival.setFname(dto.getFname());
-        festival.setFdfrom(fdfrom);
-        festival.setFdto(fdto);
+        festival.setFdfrom(DateUtil.parseDate(dto.getFdfrom()));
+        festival.setFdto(DateUtil.parseDate(dto.getFdto()));
         festival.setPosterFile(dto.getPosterFile());
         festival.setFcltynm(dto.getFcltynm());
         festival.setGenrenm(dto.getGenrenm());
@@ -166,16 +202,23 @@ public class FestivalService {
         festival.setPrfage(dto.getPrfage());
 
         festivalRepository.save(festival);
-        log.info("✅ 공연 상세 저장 및 갱신 성공(id={})", mt20id);
+        log.info("공연 상세 저장 및 갱신 성공(id={})", mt20id);
     }
 
     @Transactional
     public void fetchAndSaveFestivalDetails(List<String> mt20ids) {
+        if (mt20ids == null || mt20ids.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "수집할 공연 ID 목록이 비어 있습니다.");
+        }
         for (String id : mt20ids) {
             try {
                 fetchAndSaveFestivalDetail(id);
+            } catch (BusinessException e) {
+                log.error("저장 실패(id={}): {}", id, e.getMessage());
+                // 비즈니스 예외는 로그만 남기고 다음 ID로 계속 진행
             } catch (Exception e) {
-                log.error("❌ 저장 실패(id={}): {}", id, e.getMessage(), e);
+                log.error("저장 실패(id={}): {}", id, e.getMessage(), e);
+                // 일반 예외는 로그를 남기고 다음 ID로 계속 진행
             }
         }
     }
@@ -187,24 +230,24 @@ public class FestivalService {
                 .queryParam("service", festivalApiKey)
                 .toUriString();
 
-        FestivalDetailListDTO response =
-                fetchAndParseXml(restClient, uri, FestivalDetailListDTO.class);
+        FestivalDetailListDTO response = fetchAndParseXml(restClient, uri, FestivalDetailListDTO.class);
 
-        if (response == null
-                || response.getFestivalDetailList() == null
-                || response.getFestivalDetailList().isEmpty()) {
+        if (response == null || response.getFestivalDetailList() == null || response.getFestivalDetailList().isEmpty()) {
             return null;
         }
 
         FestivalDetailDTO dto = response.getFestivalDetailList().get(0);
-        log.info("API 응답 updatedate 값: {}", dto.getUpdatedate()); // updatedate 값 확인을 위한 로그 추가
         return dto;
     }
 
     // 기간으로 ID 수집
     public void fetchAndSaveFestivalListAndDetail(String stdate, String eddate) {
         List<String> ids = fetchIdsByPeriod(stdate, eddate);
-        log.info("📥 {}~{} ID 수집 완료: {}건", stdate, eddate, ids.size());
+        log.info("{}~{} ID 수집 완료: {}건", stdate, eddate, ids.size());
+        if (ids.isEmpty()) {
+            log.warn("수집 기간 내에 공연 ID가 없습니다.");
+            return;
+        }
         fetchAndSaveFestivalDetails(ids);
     }
 
@@ -216,8 +259,7 @@ public class FestivalService {
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
-                // values * 2 개 조회
-                .queryParam("rows", "5")
+                .queryParam("rows", "5") // values * 2 개 조회
                 .toUriString();
 
         FestivalListDTO list = fetchAndParseXml(restClient, uri, FestivalListDTO.class);
@@ -235,48 +277,28 @@ public class FestivalService {
     /* ===================== 검색 ===================== */
 
     public List<FestivalListResponseDTO> searchByGenreAndKeyword(String genre, String keyword) {
-        return festivalRepository.findByGenrenmAndFnameContaining(genre, keyword)
-                .stream()
-                .map(f -> new FestivalListResponseDTO(
-                        f.getFestivalDetail().getId(),
-                        f.getFname(),
-                        f.getFdfrom(),
-                        f.getFdto(),
-                        f.getPosterFile(),
-                        f.getFcltynm(),
-                        f.getGenrenm()
-                ))
-                .toList();
+        // 검색 결과가 없는 경우 NOT_FOUND 예외 발생
+        List<Festival> result = festivalRepository.findByGenrenmAndFnameContaining(genre, keyword);
+        if (result.isEmpty()) {
+            throw new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND, "검색 결과가 없습니다.");
+        }
+        return result.stream().map(FestivalListResponseDTO::fromEntity).toList();
     }
 
     public List<FestivalListResponseDTO> searchByGenre(String genre) {
-        return festivalRepository.findByGenrenm(genre)
-                .stream()
-                .map(f -> new FestivalListResponseDTO(
-                        f.getFestivalDetail().getId(),
-                        f.getFname(),
-                        f.getFdfrom(),
-                        f.getFdto(),
-                        f.getPosterFile(),
-                        f.getFcltynm(),
-                        f.getGenrenm()
-                ))
-                .toList();
+        List<Festival> result = festivalRepository.findByGenrenm(genre);
+        if (result.isEmpty()) {
+            throw new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND, "해당 장르의 공연이 없습니다.");
+        }
+        return result.stream().map(FestivalListResponseDTO::fromEntity).toList();
     }
 
     public List<FestivalListResponseDTO> searchByKeyword(String keyword) {
-        return festivalRepository.findByFnameContaining(keyword)
-                .stream()
-                .map(f -> new FestivalListResponseDTO(
-                        f.getFestivalDetail().getId(),
-                        f.getFname(),
-                        f.getFdfrom(),
-                        f.getFdto(),
-                        f.getPosterFile(),
-                        f.getFcltynm(),
-                        f.getGenrenm()
-                ))
-                .toList();
+        List<Festival> result = festivalRepository.findByFnameContaining(keyword);
+        if (result.isEmpty()) {
+            throw new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND, "해당 키워드의 공연이 없습니다.");
+        }
+        return result.stream().map(FestivalListResponseDTO::fromEntity).toList();
     }
 
     /* ===================== 기타 ===================== */

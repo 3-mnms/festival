@@ -1,3 +1,4 @@
+// 사용자 별 관심 상품 조회용 응답 DTO
 package com.teckit.festival.dto.response;
 
 import com.teckit.festival.dto.request.MyFavoritesDTO;

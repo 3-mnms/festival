@@ -1,3 +1,4 @@
+// 홈페이지 공연 목록 중 클릭 시 상세 정보 조회용 DTO
 package com.teckit.festival.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,9 +40,7 @@ public class FestivalDetailResponseDTO {
 
     private String poster;
     private List<String> contentFiles;
-    //private Integer views;
-    //private String hostName;
-    //private Integer likeCount;
+
     private List<String> times;
     private List<String> daysOfWeek;
 
@@ -78,7 +77,7 @@ public class FestivalDetailResponseDTO {
                 .runningTime(d.getRunningTime())
                 .times(
                         schedules.stream()
-                                .map(FestivalSchedule::getTime) // time이 String이면 그대로
+                                .map(FestivalSchedule::getTime)
                                 .toList()
                 )
                 .daysOfWeek(

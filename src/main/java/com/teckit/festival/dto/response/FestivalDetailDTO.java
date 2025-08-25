@@ -46,15 +46,8 @@ public class FestivalDetailDTO {
     @XmlElement(name = "prfcast")
     private String fcast;
 
-    //@XmlElement(name = "prfcrew")
-    //private String prfcrew;
-    //private String prfcrew;
-
     @XmlElement(name = "prfage")
     private String prfage;
-
-    //@XmlElement(name = "pcseguidance")
-    //private String pcseguidance;
 
     @XmlElement(name = "poster")
     private String posterFile;
