@@ -77,9 +77,10 @@ public class FestivalDetailDTO {
     @XmlElement(name = "prfruntime")
     private String runningTime;
 
+    @Builder.Default
     @XmlElementWrapper(name = "styurls")
     @XmlElement(name = "styurl")
-    private List<String> contentFile;
+    private List<String> contentFile = new ArrayList<>();
 
     // 내부 전용 필드
     private Long userId;

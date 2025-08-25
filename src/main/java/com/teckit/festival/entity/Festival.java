@@ -23,8 +23,9 @@ public class Festival {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "fid", referencedColumnName = "id")
     private FestivalDetail festivalDetail;
+
     @Column(nullable = false)
-    private String fname; // 공연명
+        private String fname; // 공연명
 
     // 기간
     private LocalDate fdfrom;

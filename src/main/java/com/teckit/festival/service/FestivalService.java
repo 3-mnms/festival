@@ -15,6 +15,7 @@ import com.teckit.festival.exception.ErrorCode;
 import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.util.FestivalScheduleGenerator;
+import com.teckit.festival.service.FavoriteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,7 @@ public class FestivalService {
 
     private final RestClient restClient;
     private final FestivalKafkaProducer festivalKafkaProducer;
+    private final FavoriteService favoriteService;
 
     @Value("${festival-api-key}")
     private String festivalApiKey;
@@ -61,16 +63,30 @@ public class FestivalService {
         return festivalRepository.findList(pageable);
     }
 
+
     public FestivalDetailResponseDTO getFestivalDetail(String fid) {
+        return getFestivalDetail(fid, null); // 사용자 정보 없음 → favorited=false 로 내려감
+    }
+
+
+    @Transactional(readOnly = true)
+    public FestivalDetailResponseDTO getFestivalDetail(String fid, Long userId) {
         FestivalDetail d = festivalDetailRepository.findGraphByFid(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         Festival f = d.getFestival();
         List<String> styurls = (d.getContentFile() == null) ? List.of() : d.getContentFile();
-
         var schedules = festivalScheduleRepository.findByFid(fid);
 
-        return FestivalDetailResponseDTO.of(f, d, styurls, schedules);
+        long favoriteCount = favoriteService.readCountFavorites(fid);
+        boolean favorited = (userId != null) && favoriteService.readFavorites(fid, userId);
+
+        FestivalDetailResponseDTO dto = FestivalDetailResponseDTO.of(f, d, styurls, schedules);
+
+        dto.setFavoriteCount(favoriteCount);
+        dto.setFavorited(favorited);
+
+        return dto;
     }
 
     /* ===================== 자동 수집 ===================== */

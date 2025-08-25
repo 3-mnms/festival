@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalSchedule;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -44,6 +45,11 @@ public class FestivalDetailResponseDTO {
     private List<String> times;
     private List<String> daysOfWeek;
 
+    @Schema(description = "공연 관심 상품 등록 집계값")
+    private long favoriteCount;
+
+    @Schema(description = "관심 상품 사용자별 등록 상태 (등록 - true / 미등록 - false")
+    private boolean favorited;
 
     public static FestivalDetailResponseDTO of(
             Festival f,
