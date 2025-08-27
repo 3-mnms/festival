@@ -1,8 +1,10 @@
 package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.request.FestivalRegisterDTO;
-import com.teckit.festival.dto.response.FestivalRegisterResponseDTO; // 1. Import the correct DTO
+import com.teckit.festival.dto.response.FestivalRegisterResponseDTO;
+import com.teckit.festival.exception.global.SuccessResponse;
 import com.teckit.festival.service.FestivalManageService;
+import com.teckit.festival.util.ApiResponseUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 @RequestMapping("/api/festival")
 @RestController
@@ -39,26 +40,21 @@ public class FestivalManageController {
     @Operation(summary = "공연 등록", description = "공연 기본정보, 상세정보, 일정을 통합 등록합니다.")
     @PreAuthorize("hasRole('HOST')")
     @PostMapping(value = "/manage", consumes = "multipart/form-data")
-    public ResponseEntity<Map<String, Object>> registerFestival(
+    public ResponseEntity<SuccessResponse<FestivalRegisterResponseDTO>> registerFestival(
             Authentication authentication,
             @RequestPart("requestDTO") FestivalRegisterDTO request,
             @RequestPart(value = "posterFile", required = false) MultipartFile posterFile,
             @RequestPart(value = "contentFiles", required = false) List<MultipartFile> contentFiles
     ) {
         Long userId = requireUserId(authentication);
-        // 2. Change method return type
         FestivalRegisterResponseDTO responseDto = manageService.registerFestivalWithDetails(request, userId, posterFile, contentFiles);
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "🎉 공연 등록 성공",
-                "data", responseDto
-        ));
+        return ApiResponseUtil.success(responseDto, "🎉 공연 등록 성공");
     }
 
     @Operation(summary = "공연 수정 (주최자)", description = "공연 fid(PF000001 등)를 통해 공연 기본/상세/일정 정보를 수정합니다.")
     @PreAuthorize("hasRole('HOST')")
     @PutMapping(value = "/manage/{fid}", consumes = "multipart/form-data")
-    public ResponseEntity<Map<String, Object>> updateFestival(
+    public ResponseEntity<SuccessResponse<FestivalRegisterResponseDTO>> updateFestival(
             Authentication authentication,
             @PathVariable String fid,
             @RequestPart("requestDTO") FestivalRegisterDTO request,
@@ -66,65 +62,43 @@ public class FestivalManageController {
             @RequestPart(value = "contentFiles", required = false) List<MultipartFile> contentFiles
     ) {
         Long userId = requireUserId(authentication);
-        // 2. Change method return type
         FestivalRegisterResponseDTO responseDto = manageService.updateFestival(fid, request, userId, posterFile, contentFiles);
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "✏️ 공연 수정 성공",
-                "data", responseDto
-        ));
+        return ApiResponseUtil.success(responseDto, "✏️ 공연 수정 성공");
     }
 
     @Operation(summary = "공연 삭제 (주최자/운영자)", description = "주최자는 자신이 등록한 공연을 삭제하고, 운영자는 전체 공연 목록을 삭제합니다.")
     @PreAuthorize("hasAnyRole('HOST','ADMIN')")
     @DeleteMapping("/manage/{fid}")
-    public ResponseEntity<Map<String, Object>> deleteFestivalByHost(
+    public ResponseEntity<SuccessResponse<Void>> deleteFestivalByHost(
             @PathVariable String fid,
             Authentication authentication
     ) {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
         manageService.deleteFestivalByHost(fid, userId, admin);
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "🗑️ 공연 삭제 성공"
-        ));
+        return ApiResponseUtil.success(null, "🗑️ 공연 삭제 성공");
     }
 
     @Operation(summary = "공연 목록 조회 (주최자/운영자)", description = "주최자는 자신이 등록한 공연만, 운영자는 전체 공연 목록을 조회합니다.")
     @PreAuthorize("hasAnyRole('HOST','ADMIN')")
     @GetMapping("/manage")
-    public ResponseEntity<Map<String, Object>> getMyFestivals(Authentication authentication) {
+    public ResponseEntity<SuccessResponse<List<FestivalRegisterResponseDTO>>> getMyFestivals(Authentication authentication) {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
-
-        // 2. Change method return type
         List<FestivalRegisterResponseDTO> responseList = manageService.getFestivalsByRole(userId, admin);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "📄 공연 목록 조회 성공",
-                "data", responseList
-        ));
+        return ApiResponseUtil.success(responseList, "📄 공연 목록 조회 성공");
     }
 
     @Operation(summary = "공연 상세 조회", description = "fid(PF000001 등)를 통해 공연 상세 정보를 조회합니다.")
     @PreAuthorize("hasAnyRole('HOST','ADMIN')")
     @GetMapping("/manage/{fid}")
-    public ResponseEntity<Map<String, Object>> getFestivalDetail(
+    public ResponseEntity<SuccessResponse<FestivalRegisterResponseDTO>> getFestivalDetail(
             Authentication authentication,
             @PathVariable String fid
     ) {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
-
-        // 2. Change method return type
         FestivalRegisterResponseDTO responseDto = manageService.getFestivalDetail(fid, userId, admin);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "🔎 공연 상세 조회 성공",
-                "data", responseDto
-        ));
+        return ApiResponseUtil.success(responseDto, "🔎 공연 상세 조회 성공");
     }
 }

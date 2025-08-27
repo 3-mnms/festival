@@ -1,3 +1,4 @@
+// 외부 api 추출용
 package com.teckit.festival.dto.response;
 
 import jakarta.xml.bind.annotation.*;

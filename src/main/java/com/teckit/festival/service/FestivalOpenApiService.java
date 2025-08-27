@@ -1,4 +1,4 @@
-// 📂 com.teckit.festival.service.FestivalOpenApiService
+// 외부 API 가져오는 용도
 package com.teckit.festival.service;
 
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ public class FestivalOpenApiService {
      */
     public String getFestivalDetail(String id) {
         String uri = UriComponentsBuilder.fromPath("/" + id)
-                .queryParam("service", festivalApiKey) // ✅ 동일하게 맞춤
+                .queryParam("service", festivalApiKey)
                 .build()
                 .toUriString();
 

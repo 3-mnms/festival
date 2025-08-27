@@ -37,3 +37,7 @@ out/
 .vscode/
 .env
 
+keys
+gateway-config
+init
+docker-compose.yml

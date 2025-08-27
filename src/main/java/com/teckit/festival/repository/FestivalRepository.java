@@ -12,12 +12,19 @@ import java.util.Optional;
 
 public interface FestivalRepository extends JpaRepository<Festival, Long> {
 
+    // 장르로 공연 목록을 조회
     List<Festival> findByGenrenm(String genre);
+
+    // 공연 이름에 키워드가 포함된 공연 목록을 조회
     List<Festival> findByFnameContaining(String keyword);
+
+    // 장르와 키워드로 공연 목록을 조회
     List<Festival> findByGenrenmAndFnameContaining(String genre, String keyword);
 
+    // 특정 사용자가 등록한 공연 목록을 조회
     List<Festival> findByFestivalDetail_UserId(Long userId);
 
+    // 모든 공연 목록을 DTO 형태로 페이징하여 조회
     @Query(
             value = """
     select new com.teckit.festival.dto.response.FestivalListResponseDTO(
@@ -29,11 +36,9 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
     )
     Page<FestivalListResponseDTO> findList(Pageable pageable);
 
+    // 공연 상세 ID(fid)를 통해 Festival 엔티티를 조회
     Optional<Festival> findByFestivalDetail_Id(String fid);
-    boolean existsByFestivalDetail_Id(String fid);
 
-    // Optional<Festival> findByFid(String fid);                 // ** 삭제: Festival에 fid 필드 없음 **
-    // 필요하다면 아래처럼 JPQL로 대체 가능(하지만 위 메서드가 있어 굳이 필요 없음)
-    // @Query("select f from Festival f where f.festivalDetail.id = :fid")
-    // Optional<Festival> findByFid(@Param("fid") String fid);   // **대안**
+    // 공연 상세 ID(fid)를 가진 Festival 엔티티가 존재하는지 확인
+    boolean existsByFestivalDetail_Id(String fid);
 }

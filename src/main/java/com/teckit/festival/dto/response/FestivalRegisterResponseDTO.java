@@ -1,3 +1,4 @@
+// 공연 관리용 응답 DTO
 package com.teckit.festival.dto.response;
 
 import com.teckit.festival.entity.Festival;
@@ -51,9 +52,7 @@ public class FestivalRegisterResponseDTO {
     @Schema(description = "공연 일정 리스트")
     private List<FestivalScheduleDTO> schedules;
 
-    /**
-     * Entity를 DTO로 변환하는 정적 팩토리 메서드
-     */
+    // Entity를 DTO로 변환하는 정적 팩토리 메서드
     public static FestivalRegisterResponseDTO fromEntity(Festival festival, FestivalDetail detail, List<FestivalSchedule> schedules) {
         List<FestivalScheduleDTO> scheduleDTOs = schedules.stream()
                 .map(FestivalScheduleDTO::fromEntity)

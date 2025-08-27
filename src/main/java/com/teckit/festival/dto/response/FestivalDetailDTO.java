@@ -46,15 +46,8 @@ public class FestivalDetailDTO {
     @XmlElement(name = "prfcast")
     private String fcast;
 
-    //@XmlElement(name = "prfcrew")
-    //private String prfcrew;
-    //private String prfcrew;
-
     @XmlElement(name = "prfage")
     private String prfage;
-
-    //@XmlElement(name = "pcseguidance")
-    //private String pcseguidance;
 
     @XmlElement(name = "poster")
     private String posterFile;
@@ -77,9 +70,10 @@ public class FestivalDetailDTO {
     @XmlElement(name = "prfruntime")
     private String runningTime;
 
+    @Builder.Default
     @XmlElementWrapper(name = "styurls")
     @XmlElement(name = "styurl")
-    private List<String> contentFile;
+    private List<String> contentFile = new ArrayList<>();
 
     // 내부 전용 필드
     private Long userId;
