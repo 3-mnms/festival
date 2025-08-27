@@ -2,7 +2,6 @@ package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.response.FestivalDetailResponseDTO;
 import com.teckit.festival.dto.response.FestivalListResponseDTO;
-import com.teckit.festival.dto.response.FestivalRegisterResponseDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
 import com.teckit.festival.service.FestivalService;
 import com.teckit.festival.util.ApiResponseUtil;
@@ -52,39 +51,27 @@ public class FestivalController {
         return ApiResponseUtil.success(categories);
     }
 
+    // views 정렬 옵션만 허용
     private static final Map<String, String> SORT_MAP = Map.of(
-            "fid",    "festivalDetail.id",
-            "fdto",   "fdto",
-            "fdfrom", "fdfrom",
-            "fname",  "fname",
-            "genrenm","genrenm"
+            "views", "festivalDetail.views"
     );
 
     private Sort toSort(String sortParam) {
-        // 기본: fid desc → 실제 경로로는 festivalDetail.id desc
+        // 기본 정렬을 "views,desc"로 고정합니다.
         if (sortParam == null || sortParam.isBlank()) {
-            return Sort.by(Sort.Order.desc("festivalDetail.id"));
+            return Sort.by(Sort.Order.desc("festivalDetail.views"));
         }
-        // "key,dir" 형식 지원 (예: fid,asc / fdto,desc)
+        // "key,dir" 형식 지원 (예: views,asc / views,desc)
         String[] parts = sortParam.split(",", 2);
         String key = parts[0].trim().toLowerCase();
-        String mapped = SORT_MAP.getOrDefault(key, "festivalDetail.id");
+        String mapped = SORT_MAP.getOrDefault(key, "festivalDetail.views");
         Sort.Direction dir = (parts.length > 1)
                 ? Sort.Direction.fromOptionalString(parts[1].trim().toUpperCase()).orElse(Sort.Direction.DESC)
                 : Sort.Direction.DESC;
         return Sort.by(new Sort.Order(dir, mapped));
     }
 
-    @Operation(
-            summary = "공연 목록 조회",
-            description = """
-        공연 목록(포스터/이름/기간)을 조회합니다.
-        - 페이지: 0 고정
-        - 페이지 크기: 15 고정
-        - 정렬: sort=필드명[,asc|desc] (허용: fid, fdto, fdfrom, fname, genrenm)
-        - 기본 정렬: fid,desc
-        """
-    )
+    @Operation( summary = "공연 목록 조회", description = "조회수 순(내림차순)으로 공연 목록을 정렬 합니다.")
     @GetMapping
     public ResponseEntity<SuccessResponse<Page<FestivalListResponseDTO>>> getFestivals(
             @RequestParam(required = false) String sort
@@ -94,6 +81,7 @@ public class FestivalController {
         Page<FestivalListResponseDTO> page = festivalService.getFestivals(pageable);
         return ApiResponseUtil.success(page, "페스티벌 목록 조회 성공");
     }
+
 
     @Operation(summary = "공연 상세 조회", description = "공연 ID(fid)로 상세 정보를 조회합니다.")
     @GetMapping("/{fid}")

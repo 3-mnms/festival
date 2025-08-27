@@ -161,20 +161,38 @@ public class FestivalService {
             detail.setRunningTime(dto.getRunningTime());
 
             // updatedate도 최신 값으로 업데이트
-            LocalDateTime updatedDateTime = null;
-            if (dto.getUpdatedate() != null && !dto.getUpdatedate().isBlank()) {
+            if (existing.isPresent() && dto.getUpdatedate() != null) {
                 try {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS]");
-                    updatedDateTime = LocalDateTime.parse(dto.getUpdatedate(), formatter);
-                } catch (Exception e) {
-                    System.err.println("updatedate 파싱 실패: " + dto.getUpdatedate() + " - " + e.getMessage());
-                    updatedDateTime = LocalDateTime.now();
-                }
-            } else {
-                updatedDateTime = LocalDateTime.now();
-            }
-            detail.setUpdatedate(updatedDateTime);
+                    // 여러 패턴을 처리하기 위해 파서 체인(chain)을 구현합니다.
+                    LocalDateTime dtoUpdatedate;
 
+                    try {
+                        // 1. 밀리초가 6자리인 경우 시도
+                        DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+                        dtoUpdatedate = LocalDateTime.parse(dto.getUpdatedate(), formatter1);
+                    } catch (Exception e1) {
+                        try {
+                            // 2. 밀리초가 5자리인 경우 시도 (로그에서 확인된 형식)
+                            DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSS");
+                            dtoUpdatedate = LocalDateTime.parse(dto.getUpdatedate(), formatter2);
+                        } catch (Exception e2) {
+                            // 3. 밀리초가 없는 경우 시도
+                            DateTimeFormatter formatter3 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            dtoUpdatedate = LocalDateTime.parse(dto.getUpdatedate(), formatter3);
+                        }
+                    }
+
+                    // 기존 데이터와 비교
+                    if (dtoUpdatedate.equals(existing.get().getUpdatedate())) {
+                        log.info("이미 최신 데이터(id={})", mt20id);
+                        return;
+                    }
+                } catch (Exception e) {
+                    // 모든 파싱 시도가 실패한 경우
+                    log.error("updatedate 파싱 실패: {} - {} → 계속 진행", dto.getUpdatedate(), e.getMessage());
+                    // 파싱 실패 시에는 업데이트가 필요하다고 판단하고 계속 진행
+                }
+            }
         }
 
         // 5. 저장
@@ -259,7 +277,7 @@ public class FestivalService {
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
-                .queryParam("rows", "5") // values * 2 개 조회
+                .queryParam("rows", "100") // values * 2 개 조회
                 .toUriString();
 
         FestivalListDTO list = fetchAndParseXml(restClient, uri, FestivalListDTO.class);

@@ -30,7 +30,8 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
     select new com.teckit.festival.dto.response.FestivalListResponseDTO(
       f.festivalDetail.id, f.fname, f.fdfrom, f.fdto, f.posterFile, f.fcltynm, f.genrenm
     )
-    from Festival f
+    from Festival f JOIN f.festivalDetail fd
+    ORDER BY fd.views DESC
   """,
             countQuery = "select count(f) from Festival f"
     )
