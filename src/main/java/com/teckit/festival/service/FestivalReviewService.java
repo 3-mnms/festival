@@ -10,6 +10,8 @@ import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalReviewRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,15 +25,13 @@ public class FestivalReviewService {
     private final FestivalDetailRepository festivalDetailRepository;
     private final FestivalReviewRepository festivalReviewRepository;
 
-    public List<FestivalReviewResponseDTO> getReviews(String fId) {
+    public Page<FestivalReviewResponseDTO> getReviews(String fId, Pageable pageable) {
         FestivalDetail festivalDetail = festivalDetailRepository.findById(fId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        List<FestivalReview> festivalReviewList = festivalReviewRepository.findByFestivalDetail(festivalDetail);
+        Page<FestivalReview> festivalReviewList = festivalReviewRepository.findByFestivalDetail(festivalDetail, pageable);
 
-        return festivalReviewList.stream()
-                .map(FestivalReviewResponseDTO::fromEntity)
-                .collect(Collectors.toList());
+        return festivalReviewList.map(FestivalReviewResponseDTO::fromEntity);
     }
 
     @Transactional
