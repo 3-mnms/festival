@@ -57,6 +57,13 @@ public class FestivalDetail {
     private String entrpsnmH;
     private String runningTime;
 
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<FestivalReview> festivalReviews = new ArrayList<>();
+
+    @OneToOne(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private FestivalReviewAnalyze festivalReviewAnalyze;
+
     @Builder.Default
     @ElementCollection
     private List<String> contentFile = new ArrayList<>();
