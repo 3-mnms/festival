@@ -2,11 +2,15 @@ package com.teckit.festival.service;
 
 import com.teckit.festival.dto.request.FestivalReviewRequestDTO;
 import com.teckit.festival.dto.response.FestivalReviewResponseDTO;
+import com.teckit.festival.dto.response.FestivalReviewResultDTO;
+import com.teckit.festival.dto.response.ReviewAnalyzeResponseDTO;
 import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalReview;
+import com.teckit.festival.entity.FestivalReviewAnalyze;
 import com.teckit.festival.exception.BusinessException;
 import com.teckit.festival.exception.ErrorCode;
 import com.teckit.festival.repository.FestivalDetailRepository;
+import com.teckit.festival.repository.FestivalReviewAnalyzeRepository;
 import com.teckit.festival.repository.FestivalReviewRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,15 +26,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class FestivalReviewService {
     private final FestivalDetailRepository festivalDetailRepository;
     private final FestivalReviewRepository festivalReviewRepository;
+    private final FestivalReviewAnalyzeRepository festivalReviewAnalyzeRepository;
     private final FestivalReviewAnalyzeService analyzeService;
 
-    public Page<FestivalReviewResponseDTO> getReviews(String fId, Pageable pageable) {
+    public FestivalReviewResultDTO getReviews(String fId, Pageable pageable) {
         FestivalDetail festivalDetail = festivalDetailRepository.findById(fId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         Page<FestivalReview> festivalReviewList = festivalReviewRepository.findByFestivalDetail(festivalDetail, pageable);
+        FestivalReviewAnalyze festivalReviewAnalyze = festivalReviewAnalyzeRepository.findByFestivalDetail(festivalDetail)
+                .orElse(null);
 
-        return festivalReviewList.map(FestivalReviewResponseDTO::fromEntity);
+        Page<FestivalReviewResponseDTO> festivalReviewListDTO = festivalReviewList.map(FestivalReviewResponseDTO::fromEntity);
+
+        FestivalReviewResultDTO reviewResultDTO = FestivalReviewResultDTO.builder()
+                .reviews(festivalReviewListDTO)
+                .analyze(festivalReviewAnalyze != null ? ReviewAnalyzeResponseDTO.fromEntity(festivalReviewAnalyze) : null)
+                .build();
+        return reviewResultDTO;
     }
 
     public FestivalReviewResponseDTO getMyReview(String fId, Long userId) {

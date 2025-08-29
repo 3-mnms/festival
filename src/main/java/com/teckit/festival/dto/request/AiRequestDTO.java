@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReviewAnalyzeRequestDTO {
+public class AiRequestDTO {
     @JsonProperty("summary")
     @Schema(description = "기대평 요약 내용")
     private String analyzeContent;
@@ -33,8 +33,8 @@ public class ReviewAnalyzeRequestDTO {
     @Schema(description = "중립 감정 개수")
     private int neutralCount;
 
-    public static ReviewAnalyzeRequestDTO from(String analyzeContent, String newContent, int positiveCount, int negativeCount, int neutralCount) {
-        return ReviewAnalyzeRequestDTO.builder()
+    public static AiRequestDTO from(String analyzeContent, String newContent, int positiveCount, int negativeCount, int neutralCount) {
+        return AiRequestDTO.builder()
                 .analyzeContent(analyzeContent)
                 .newContent(newContent)
                 .positiveCount(positiveCount)

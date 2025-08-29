@@ -1,6 +1,6 @@
 package com.teckit.festival.entity;
 
-import com.teckit.festival.dto.response.ReviewAnalyzeResponseDTO;
+import com.teckit.festival.dto.response.AiResponseDTO;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -48,7 +48,7 @@ public class FestivalReviewAnalyze {
     @JoinColumn(name = "fid")
     private FestivalDetail festivalDetail;
 
-    public void updateReviewAnalyze(ReviewAnalyzeResponseDTO responseDTO) {
+    public void updateReviewAnalyze(AiResponseDTO responseDTO) {
         this.analyzeContent = responseDTO.getAnalyzeContent();
         this.positiveCount = responseDTO.getPositiveCount();
         this.negativeCount = responseDTO.getNegativeCount();
