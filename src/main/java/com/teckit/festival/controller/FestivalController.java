@@ -14,6 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -101,12 +104,44 @@ public class FestivalController {
         return ApiResponseUtil.success(views);
     }
 
-    @Operation(summary = "공연 조회수 증가", description = "공연 ID(fid)로 조회수를 1 증가시킵니다.")
+    @Operation(summary = "공연 조회수 증가", description = "공연 ID(fid)로 조회수를 1 증가시킵니다. 쿠키를 이용하여 중복을 방지합니다.")
     @PostMapping("/views/{fid}")
-    public ResponseEntity<SuccessResponse<Integer>> increaseViews(
-            @PathVariable("fid") String fid
+    public ResponseEntity<SuccessResponse<Map<String, Object>>> increaseViews(
+            @PathVariable("fid") String fid,
+            HttpServletRequest request,
+            HttpServletResponse response
     ) {
-        int updated = festivalService.increaseViews(fid);
-        return ApiResponseUtil.success(updated, "조회수 증가");
+        // 1. 쿠키 확인
+        Cookie[] cookies = request.getCookies();
+        boolean alreadyViewed = false;
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                // "viewed_" + fid 쿠키가 있는지 확인
+                if (("viewed_" + fid).equals(cookie.getName())) {
+                    alreadyViewed = true;
+                    break;
+                }
+            }
+        }
+
+        // 2. 조회수 증가 및 쿠키 발급
+        if (!alreadyViewed) {
+            int updatedViews = festivalService.increaseViews(fid);
+
+            Cookie newCookie = new Cookie("viewed_" + fid, "true");
+            newCookie.setMaxAge(60 * 60 * 24); // 24시간 동안 유효
+            newCookie.setHttpOnly(true);       // JavaScript 접근 방지
+            newCookie.setPath("/");            // 모든 경로에서 쿠키 유효
+            response.addCookie(newCookie);
+
+            Map<String, Object> result = Map.of("views", updatedViews);
+            return ApiResponseUtil.success(result, "조회수 증가");
+        }
+
+        // 3. 이미 조회한 경우 현재 조회수만 반환
+        int currentViews = festivalService.getViews(fid);
+        Map<String, Object> result = Map.of("views", currentViews);
+        return ApiResponseUtil.success(result, "이미 조회한 공연");
     }
 }

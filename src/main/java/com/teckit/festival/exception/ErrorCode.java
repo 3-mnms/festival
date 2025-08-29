@@ -28,7 +28,8 @@ public enum ErrorCode {
     // 5xx (서버/백엔드 연동 오류)
     KAFKA_PUBLISH_FAILED(HttpStatus.BAD_GATEWAY, "이벤트 발행에 실패했습니다."),
     DATABASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "데이터 처리 중 오류가 발생했습니다."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."); // 추가된 부분
 
     private final HttpStatus status;
     private final String message;

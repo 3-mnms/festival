@@ -277,7 +277,7 @@ public class FestivalService {
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
-                .queryParam("rows", "100") // values * 2 개 조회
+                .queryParam("rows", "1") // values * 2 개 조회
                 .toUriString();
 
         FestivalListDTO list = fetchAndParseXml(restClient, uri, FestivalListDTO.class);
@@ -333,9 +333,14 @@ public class FestivalService {
 
     @Transactional
     public int increaseViews(String id) {
+        // 1. 공연 상세 정보 조회
         FestivalDetail detail = festivalDetailRepository.findByFestivalId(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+
+        // 2. 조회수 증가
         detail.setViews(detail.getViews() + 1);
+
+        // 3. 업데이트된 조회수 반환
         return detail.getViews();
     }
 }
