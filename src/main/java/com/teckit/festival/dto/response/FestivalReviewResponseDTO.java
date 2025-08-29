@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Schema(description = "페스티벌 기대평 작성 후 응답 DTO", name = "FestivalReviewResponseDTO")
+@Schema(description = "페스티벌 기대평 응답 DTO", name = "FestivalReviewResponseDTO")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

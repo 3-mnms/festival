@@ -2,6 +2,7 @@ package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.request.FestivalReviewRequestDTO;
 import com.teckit.festival.dto.response.FestivalReviewResponseDTO;
+import com.teckit.festival.dto.response.FestivalReviewResultDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
 import com.teckit.festival.service.FestivalReviewService;
 import com.teckit.festival.util.ApiResponseUtil;
@@ -37,21 +38,21 @@ public class FestivalReviewController {
             @ApiResponse(responseCode = "200", description = "페스티벌 별 기대평 조회 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
     })
-    public ResponseEntity<SuccessResponse<Page<FestivalReviewResponseDTO>>> getReviews(@PathVariable("fId") String fId, @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "0") int page)
+    public ResponseEntity<SuccessResponse<FestivalReviewResultDTO>> getReviews(@PathVariable("fId") String fId, @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "0") int page)
     {
-        int size = 15;
+        int size = 10;
         int safePage = Math.max(page, 0); //음수로 들어오면 0으로
 
         Sort.Direction direction = sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(safePage, size, Sort.by(direction, "createdAt"));
 
-        Page<FestivalReviewResponseDTO> festivalReviewResponseDTOS = festivalReviewService.getReviews(fId, pageable);
-        return ApiResponseUtil.success(festivalReviewResponseDTOS);
+        FestivalReviewResultDTO festivalReviewResultDTO = festivalReviewService.getReviews(fId, pageable);
+        return ApiResponseUtil.success(festivalReviewResultDTO);
     }
 
-    @GetMapping(value="/myReview/{fId}")
+    @GetMapping(value="/{fId}/myReview")
     @Operation(summary = "페스티벌 별 본인 기대평 조회",
-            description = "페스티벌 별 본인 기대평 조회 ex) GET /api/festival/review/myReview/{fId}")
+            description = "페스티벌 별 본인 기대평 조회 ex) GET /api/festival/review/{fId}/myReview")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "페스티벌 별 본인 기대평 조회 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))

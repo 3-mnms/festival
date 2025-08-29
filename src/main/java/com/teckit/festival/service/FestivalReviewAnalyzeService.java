@@ -1,7 +1,7 @@
 package com.teckit.festival.service;
 
-import com.teckit.festival.dto.request.ReviewAnalyzeRequestDTO;
-import com.teckit.festival.dto.response.ReviewAnalyzeResponseDTO;
+import com.teckit.festival.dto.request.AiRequestDTO;
+import com.teckit.festival.dto.response.AiResponseDTO;
 import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalReviewAnalyze;
 import com.teckit.festival.exception.BusinessException;
@@ -27,30 +27,30 @@ public class FestivalReviewAnalyzeService {
         FestivalDetail festivalDetail = festivalDetailRepository.findById(fId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
-        FestivalReviewAnalyze reviewAnalyze = festivalReviewAnalyzeRepository.findByFestivalDetail_Id(fId)
+        FestivalReviewAnalyze reviewAnalyze = festivalReviewAnalyzeRepository.findByFestivalDetail(festivalDetail)
                 .orElse(FestivalReviewAnalyze.builder()
                         .festivalDetail(festivalDetail)
                         .build());
 
-        ReviewAnalyzeResponseDTO responseDTO = callAiReviewAnalyze(reviewAnalyze, newReview);
+        AiResponseDTO responseDTO = callAiReviewAnalyze(reviewAnalyze, newReview);
         reviewAnalyze.updateReviewAnalyze(responseDTO);
 
         festivalReviewAnalyzeRepository.save(reviewAnalyze);
     }
 
-    private ReviewAnalyzeResponseDTO callAiReviewAnalyze(FestivalReviewAnalyze reviewAnalyze, String newReview) {
+    private AiResponseDTO callAiReviewAnalyze(FestivalReviewAnalyze reviewAnalyze, String newReview) {
 
         String summary = reviewAnalyze.getAnalyzeContent() != null ? reviewAnalyze.getAnalyzeContent() : "";
 
-        ReviewAnalyzeRequestDTO reviewRequest = ReviewAnalyzeRequestDTO.from(
+        AiRequestDTO reviewRequest = AiRequestDTO.from(
                 summary, newReview, reviewAnalyze.getPositiveCount(), reviewAnalyze.getNegativeCount(), reviewAnalyze.getNeutralCount()
         );
 
-        ReviewAnalyzeResponseDTO response = webClient.post()
+        AiResponseDTO response = webClient.post()
                 .uri("/festival/review/analyze")
                 .bodyValue(reviewRequest)
                 .retrieve()
-                .bodyToMono(ReviewAnalyzeResponseDTO.class)
+                .bodyToMono(AiResponseDTO.class)
                 .block();
 
         if (response == null) {
