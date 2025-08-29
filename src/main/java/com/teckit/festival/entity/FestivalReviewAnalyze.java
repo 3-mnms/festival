@@ -1,5 +1,6 @@
 package com.teckit.festival.entity;
 
+import com.teckit.festival.dto.response.ReviewAnalyzeResponseDTO;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -46,5 +47,22 @@ public class FestivalReviewAnalyze {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fid")
     private FestivalDetail festivalDetail;
+
+    public void updateReviewAnalyze(ReviewAnalyzeResponseDTO responseDTO) {
+        this.analyzeContent = responseDTO.getAnalyzeContent();
+        this.positiveCount = responseDTO.getPositiveCount();
+        this.negativeCount = responseDTO.getNegativeCount();
+        this.neutralCount = responseDTO.getNeutralCount();
+        this.calcEmotion();
+    }
+
+    private void calcEmotion() {
+        int total = positiveCount + negativeCount + neutralCount;
+        if (total > 0) {
+            this.positive = Math.round((positiveCount * 100.0f) / total);
+            this.negative = Math.round((negativeCount * 100.0f) / total);
+            this.neutral = Math.round((neutralCount * 100.0f) / total);
+        }
+    }
 
 }

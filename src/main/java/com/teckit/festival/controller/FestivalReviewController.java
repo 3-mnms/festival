@@ -49,9 +49,9 @@ public class FestivalReviewController {
         return ApiResponseUtil.success(festivalReviewResponseDTOS);
     }
 
-    @GetMapping(value="/{fId}")
+    @GetMapping(value="/myReview/{fId}")
     @Operation(summary = "페스티벌 별 본인 기대평 조회",
-            description = "페스티벌 별 본인 기대평 조회 ex) GET /api/festival/review/{fId}")
+            description = "페스티벌 별 본인 기대평 조회 ex) GET /api/festival/review/myReview/{fId}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "페스티벌 별 본인 기대평 조회 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
@@ -103,8 +103,4 @@ public class FestivalReviewController {
         festivalReviewService.deleteReview(userId, role, fId, rId);
         return ApiResponseUtil.success(null, "기대평 삭제 완료");
     }
-
-
-
-
 }

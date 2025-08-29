@@ -1,6 +1,5 @@
 package com.teckit.festival.dto.request;
 
-import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalReview;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
