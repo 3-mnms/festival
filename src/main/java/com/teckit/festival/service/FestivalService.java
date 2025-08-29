@@ -277,7 +277,7 @@ public class FestivalService {
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
-                .queryParam("rows", "100") // values * 2 개 조회
+                .queryParam("rows", "1") // values * 2 개 조회
                 .toUriString();
 
         FestivalListDTO list = fetchAndParseXml(restClient, uri, FestivalListDTO.class);

@@ -1,6 +1,5 @@
 package com.teckit.festival.dto.request;
 
-import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalReview;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -22,11 +21,10 @@ public class FestivalReviewRequestDTO {
     @Size(max = 512, message = "내용은 512자 이상 작성할 수 없습니다.")
     private String reviewContent;
 
-    public FestivalReview toEntity(Long userId, FestivalReviewRequestDTO festivalReviewRequestDTO, FestivalDetail festivalDetail) {
+    public FestivalReview toEntity(Long userId) {
         return FestivalReview.builder()
                 .reviewContent(reviewContent)
                 .userId(userId)
-                .festivalDetail(festivalDetail)
                 .build();
     }
 }

@@ -15,8 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +22,7 @@ import java.util.stream.Collectors;
 public class FestivalReviewService {
     private final FestivalDetailRepository festivalDetailRepository;
     private final FestivalReviewRepository festivalReviewRepository;
+    private final FestivalReviewAnalyzeService analyzeService;
 
     public Page<FestivalReviewResponseDTO> getReviews(String fId, Pageable pageable) {
         FestivalDetail festivalDetail = festivalDetailRepository.findById(fId)
@@ -34,12 +33,32 @@ public class FestivalReviewService {
         return festivalReviewList.map(FestivalReviewResponseDTO::fromEntity);
     }
 
+    public FestivalReviewResponseDTO getMyReview(String fId, Long userId) {
+        FestivalDetail festivalDetail = festivalDetailRepository.findById(fId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+
+        FestivalReviewResponseDTO reviewResponseDTO = festivalReviewRepository.findByFestivalDetailAndUserId(festivalDetail, userId)
+                .map(FestivalReviewResponseDTO::fromEntity)
+                .orElse(null);
+
+        return reviewResponseDTO;
+    }
+
     @Transactional
     public FestivalReviewResponseDTO createReview(Long userId, @Valid FestivalReviewRequestDTO festivalReviewRequestDTO, String fId) {
         FestivalDetail festivalDetail = festivalDetailRepository.findById(fId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
+        festivalReviewRepository.findByFestivalDetailAndUserId(festivalDetail, userId)
+                .ifPresent(review ->{
+                    throw new BusinessException(ErrorCode.REVIEW_ALREADY_EXISTS);
+                });
 
-        FestivalReview festivalReview = festivalReviewRequestDTO.toEntity(userId, festivalReviewRequestDTO, festivalDetail);
+        FestivalReview festivalReview = festivalReviewRequestDTO.toEntity(userId);
+        festivalDetail.getFestivalReviews().add(festivalReview);
+        festivalReview.setFestivalDetail(festivalDetail);
+
+        analyzeService.analyzeReview(festivalReviewRequestDTO.getReviewContent(), fId);
+
         festivalReviewRepository.save(festivalReview);
 
         return FestivalReviewResponseDTO.fromEntity(festivalReview);
@@ -63,16 +82,17 @@ public class FestivalReviewService {
     }
 
     @Transactional
-    public void deleteReview(Long userId, String fId, Long rId) {
+    public void deleteReview(Long userId, String role, String fId, Long rId) {
         festivalDetailRepository.findById(fId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
         FestivalReview festivalReview = festivalReviewRepository.findById(rId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
 
-        if(!festivalReview.getUserId().equals(userId))
-            throw new BusinessException(ErrorCode.REVIEW_NOT_ALLOWED);
-
+        if(!role.equals("ADMIN")) {
+            if (!festivalReview.getUserId().equals(userId))
+                throw new BusinessException(ErrorCode.REVIEW_NOT_ALLOWED);
+        }
         festivalReviewRepository.delete(festivalReview);
     }
 }
