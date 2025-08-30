@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class FestivalReviewResponseDTO {
+    @Schema(description = "기대평 Id")
+    private Long reviewId;
+
     @Schema(description = "기대평 내용")
     private String reviewContent;
 
@@ -30,6 +33,7 @@ public class FestivalReviewResponseDTO {
     @Schema(hidden = true)
     public static FestivalReviewResponseDTO fromEntity(FestivalReview festivalReview) {
         return FestivalReviewResponseDTO.builder()
+                .reviewId(festivalReview.getReviewId())
                 .reviewContent(festivalReview.getReviewContent())
                 .userId(festivalReview.getUserId())
                 .createdAt(festivalReview.getCreatedAt())
