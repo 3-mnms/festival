@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ReviewAnalyzeResponseDTO {
+    @Schema(description = "기대평 분석 Id")
+    private Long analyzeId;
 
     @Schema(description = "기대평 분석 내용")
     private String analyzeContent;
@@ -29,6 +31,7 @@ public class ReviewAnalyzeResponseDTO {
     @Schema(hidden = true)
     public static ReviewAnalyzeResponseDTO fromEntity(FestivalReviewAnalyze festivalReviewAnalyze) {
         return ReviewAnalyzeResponseDTO.builder()
+                .analyzeId(festivalReviewAnalyze.getAnalyzeId())
                 .analyzeContent(festivalReviewAnalyze.getAnalyzeContent())
                 .positive(festivalReviewAnalyze.getPositive())
                 .negative(festivalReviewAnalyze.getNegative())
