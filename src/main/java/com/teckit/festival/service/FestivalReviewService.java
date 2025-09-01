@@ -70,7 +70,7 @@ public class FestivalReviewService {
         festivalDetail.getFestivalReviews().add(festivalReview);
         festivalReview.setFestivalDetail(festivalDetail);
 
-//        analyzeService.analyzeReview(festivalReviewRequestDTO.getReviewContent(), fId);
+        analyzeService.analyzeReview(festivalReviewRequestDTO.getReviewContent(), fId);
 
         festivalReviewRepository.save(festivalReview);
 
