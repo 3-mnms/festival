@@ -27,9 +27,14 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-json'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 
-	// AWS SDK for Java 1.x dependencies (consistent versioning)
-	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.788'
-	implementation 'com.amazonaws:aws-java-sdk-sts:1.12.788'
+	// ✅ AWS SDK v2 (Presigned URL 발급용)
+	//
+	// implementation platform("software.amazon.awssdk:bom:2.25.60")
+	// implementation "software.amazon.awssdk:s3"
+
+	// ✅ AWS SDK v1 (서버 직접 업로드용 - FileUploadUtil)
+	//implementation 'com.amazonaws:aws-java-sdk-s3:1.12.788'
+	//implementation 'com.amazonaws:aws-java-sdk-sts:1.12.788'
 
 	// Kafka
 	implementation 'org.springframework.kafka:spring-kafka'

@@ -13,19 +13,27 @@ import com.teckit.festival.repository.FestivalDetailRepository;
 import com.teckit.festival.repository.FestivalRepository;
 import com.teckit.festival.repository.FestivalScheduleRepository;
 import com.teckit.festival.util.DateUtil;
+import com.teckit.festival.util.FestivalIdGenerator;
+import com.teckit.festival.util.FestivalStatusUtil;
+import com.teckit.festival.util.FileUploadUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.ArrayList;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,41 +45,44 @@ public class FestivalManageService {
     private final FestivalDetailRepository detailRepository;
     private final FestivalScheduleRepository scheduleRepository;
     private final FestivalKafkaProducer kafkaProducer;
-    private final FileUploadService fileUploadService;
+    private final FestivalIdGenerator festivalIdGenerator;
 
+    // 필드 주입
+    @Value("${app.base-url}")
+    private String baseUrl;
+
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDir;
+
+    // 공연 등록
     @Transactional
-    public FestivalRegisterResponseDTO registerFestivalWithDetails(FestivalRegisterDTO request, Long userId, MultipartFile posterFile, List<MultipartFile> contentFiles) {
-        // 1. DTO 유효성 검사
+    public FestivalRegisterResponseDTO registerFestivalWithDetails(
+            FestivalRegisterDTO request,
+            Long userId,
+            MultipartFile posterFile,
+            List<MultipartFile> contentFiles
+    ) {
         var detailReq = request.getDetail();
         if (detailReq == null) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "공연 상세 정보가 누락되었습니다.");
         }
 
-        // 2. 파일 업로드
-        String posterUrl = (posterFile != null && !posterFile.isEmpty()) ? fileUploadService.uploadFile(posterFile) : null;
-        List<String> contentUrls = new ArrayList<>();
-        if (contentFiles != null && !contentFiles.isEmpty()) {
-            for (MultipartFile file : contentFiles) {
-                contentUrls.add(fileUploadService.uploadFile(file));
-            }
-        }
+        // 파일 저장 (FileUploadUtil만 사용)
+        String posterUrl = FileUploadUtil.saveFile(posterFile, uploadDir, baseUrl, "pfmPoster");
+        List<String> contentUrls = FileUploadUtil.saveFiles(contentFiles, uploadDir, baseUrl, "pfmIntroImage");
 
-        // 3. 고유한 ID 생성 (중복 체크 포함)
-        String fid = generateUniqueFid();
-
-        int safeTicketPick  = Math.max(1, detailReq.getTicketPick());
+        String fid = festivalIdGenerator.generateUniqueFid();
+        int safeTicketPick = Math.max(1, detailReq.getTicketPick());
         int safeMaxPurchase = Math.max(1, detailReq.getMaxPurchase());
-        int safeAvailable   = Math.max(0, detailReq.getAvailableNOP());
+        int safeAvailable = Math.max(0, detailReq.getAvailableNOP());
 
         LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
-        LocalDate fdto   = DateUtil.parseDate(request.getFdto());
-        String computedState = calcState(fdfrom, fdto);
+        LocalDate fdto = DateUtil.parseDate(request.getFdto());
+        String computedState = FestivalStatusUtil.calcState(fdfrom, fdto);
 
-        // 4. FestivalDetail Entity 생성
         FestivalDetail detail = FestivalDetail.builder()
                 .id(fid)
                 .userId(userId)
-                .fcltyid(detailReq.getFcltyid())
                 .fname(request.getFname())
                 .fdfrom(fdfrom)
                 .fdto(fdto)
@@ -91,23 +102,19 @@ public class FestivalManageService {
                 .contentFile(contentUrls)
                 .entrpsnmH(detailReq.getEntrpsnmH())
                 .runningTime(detailReq.getRunningTime())
-                .updatedate( (detailReq.getUpdatedate()!=null && !detailReq.getUpdatedate().isBlank())
-                        ? LocalDateTime.parse(detailReq.getUpdatedate().substring(0,19), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        : LocalDateTime.now())
+                .updatedate(LocalDateTime.now())
                 .build();
 
-        // 5. FestivalSchedule Entity 생성 및 연관 관계 설정
-        List<FestivalSchedule> schedules = (request.getSchedules()==null ? List.of()
+        List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.of()
                 : request.getSchedules().stream()
                 .map(s -> FestivalSchedule.builder()
                         .festivalDetail(detail)
                         .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek().toUpperCase()))
                         .time(s.getTime())
                         .build())
-                .collect(Collectors.toList()));
+                .toList());
         detail.setSchedules(schedules);
 
-        // 6. Festival Entity 생성 및 연관 관계 설정
         Festival festival = Festival.builder()
                 .fname(request.getFname())
                 .fdfrom(fdfrom)
@@ -121,10 +128,8 @@ public class FestivalManageService {
                 .build();
         detail.setFestival(festival);
 
-        // 7. 저장
         detailRepository.saveAndFlush(detail);
 
-        // 8. 저장 후 재조회 및 Kafka 전송
         FestivalDetail persisted = detailRepository.findById(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "저장된 공연 정보를 찾을 수 없습니다."));
 
@@ -133,9 +138,15 @@ public class FestivalManageService {
         return FestivalRegisterResponseDTO.fromEntity(festival, persisted, schedules);
     }
 
+    // 공연 수정
     @Transactional
-    public FestivalRegisterResponseDTO updateFestival(String fid, FestivalRegisterDTO request, Long userId, MultipartFile posterFile, List<MultipartFile> contentFiles) {
-        // 1. 공연 존재 여부 및 소유자 확인
+    public FestivalRegisterResponseDTO updateFestival(
+            String fid,
+            FestivalRegisterDTO request,
+            Long userId,
+            MultipartFile posterFile,
+            List<MultipartFile> contentFiles
+    ) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
@@ -143,33 +154,32 @@ public class FestivalManageService {
             throw new BusinessException(ErrorCode.NOT_OWNER);
         }
 
-        // 2. DTO 유효성 검사
         var detailReq = request.getDetail();
         if (detailReq == null) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "공연 상세 정보가 누락되었습니다.");
         }
 
-        // 3. 파일 업로드 (기존 파일 유지 로직)
-        String posterUrl = (posterFile != null && !posterFile.isEmpty()) ? fileUploadService.uploadFile(posterFile) : festival.getPosterFile();
-        List<String> contentUrls = new ArrayList<>();
-        if (contentFiles != null && !contentFiles.isEmpty()) {
-            for (MultipartFile file : contentFiles) {
-                contentUrls.add(fileUploadService.uploadFile(file));
-            }
-        }
+        // 기존 포스터 유지 or 교체
+        String posterPath = (posterFile != null && !posterFile.isEmpty())
+                ? FileUploadUtil.saveFile(posterFile, uploadDir, baseUrl, "pfmPoster")
+                : festival.getPosterFile();
+
+        // 기존 상세이미지 유지 or 교체
+        List<String> contentPaths = (contentFiles != null && !contentFiles.isEmpty())
+                ? FileUploadUtil.saveFiles(contentFiles, uploadDir, baseUrl, "pfmIntroImage")
+                : festival.getFestivalDetail().getContentFile();
 
         LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
-        LocalDate fdto   = DateUtil.parseDate(request.getFdto());
-        String computedState = calcState(fdfrom, fdto);
+        LocalDate fdto = DateUtil.parseDate(request.getFdto());
+        String computedState = FestivalStatusUtil.calcState(fdfrom, fdto);
 
-        // 4. Entity 업데이트
         FestivalDetail detail = festival.getFestivalDetail();
         detail.setFname(request.getFname());
         detail.setFdfrom(fdfrom);
         detail.setFdto(fdto);
         detail.setFcltynm(request.getFcltynm());
-        detail.setPosterFile(posterUrl);
-        detail.setContentFile(contentUrls);
+        detail.setPosterFile(posterPath);
+        detail.setContentFile(contentPaths);
         detail.setGenrenm(request.getGenrenm());
         detail.setFstate(computedState);
         detail.setPrfage(detailReq.getPrfage());
@@ -182,18 +192,14 @@ public class FestivalManageService {
         detail.setRunningTime(detailReq.getRunningTime());
         detail.setEntrpsnmH(detailReq.getEntrpsnmH());
         detail.setAvailableNOP(Math.max(0, detailReq.getAvailableNOP()));
-
         detail.setUpdatedate(
                 detailReq.getUpdatedate() != null && !detailReq.getUpdatedate().isBlank()
-                        ? LocalDateTime.parse(
-                        detailReq.getUpdatedate().substring(0, 19),
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                )
+                        ? LocalDateTime.parse(detailReq.getUpdatedate().substring(0, 19),
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         : LocalDateTime.now()
         );
 
-        // 5. 스케줄 업데이트
-        // 기존 스케줄 삭제 후 새로 저장 (⚠️ FestivalScheduleRepository에 deleteByFestivalDetail_Id(String fid) 메서드가 필요)
+        // 스케줄 교체
         scheduleRepository.deleteByFestivalDetail_Id(fid);
         List<FestivalSchedule> schedules = (request.getSchedules() == null ? List.of()
                 : request.getSchedules().stream()
@@ -209,7 +215,7 @@ public class FestivalManageService {
         festival.setFname(request.getFname());
         festival.setFdfrom(fdfrom);
         festival.setFdto(fdto);
-        festival.setPosterFile(posterUrl);
+        festival.setPosterFile(posterPath);
         festival.setFcltynm(request.getFcltynm());
         festival.setGenrenm(request.getGenrenm());
         festival.setPrfage(detailReq.getPrfage());
@@ -223,6 +229,7 @@ public class FestivalManageService {
         return FestivalRegisterResponseDTO.fromEntity(festival, detail, schedules);
     }
 
+    // 공연 삭제
     @Transactional
     public void deleteFestivalByHost(String fid, Long userId, boolean isAdmin) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
@@ -238,25 +245,27 @@ public class FestivalManageService {
         detailRepository.deleteById(fid);
     }
 
+    // 공연 목록 조회
     public List<FestivalRegisterResponseDTO> getFestivalsByRole(Long userId, boolean isAdmin) {
-        List<Festival> festivals;
-        if (isAdmin) {
-            festivals = festivalRepository.findAll();
-        } else {
-            festivals = festivalRepository.findByFestivalDetail_UserId(userId);
-        }
+        List<Festival> festivals = isAdmin
+                ? festivalRepository.findAll()
+                : festivalRepository.findByFestivalDetail_UserId(userId);
 
         return festivals.stream()
                 .map(festival -> {
                     Hibernate.initialize(festival.getFestivalDetail().getSchedules());
-                    return FestivalRegisterResponseDTO.fromEntity(festival, festival.getFestivalDetail(), festival.getFestivalDetail().getSchedules());
+                    return FestivalRegisterResponseDTO.fromEntity(
+                            festival,
+                            festival.getFestivalDetail(),
+                            festival.getFestivalDetail().getSchedules()
+                    );
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
+    // 공연 상세 조회
     @Transactional
     public FestivalRegisterResponseDTO getFestivalDetail(String fid, Long userId, boolean admin) {
-        // 기존의 IllegalArgumentException, SecurityException 대신 BusinessException 사용
         FestivalDetail detail = detailRepository.findById(fid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND, "존재하지 않는 공연입니다."));
 
@@ -268,31 +277,4 @@ public class FestivalManageService {
         return FestivalRegisterResponseDTO.fromEntity(detail.getFestival(), detail, detail.getSchedules());
     }
 
-    private String generateUniqueFid() {
-        String fid;
-        do {
-            fid = "PF" + randomNumeric(6);
-            if (detailRepository.existsById(fid)) {
-                // 중복될 경우 BusinessException을 던져서 명확하게 알림
-                throw new BusinessException(ErrorCode.DUPLICATE_FID, "공연 식별자 생성 중 중복이 발생했습니다.");
-            }
-        } while (detailRepository.existsById(fid)); // 이 부분은 이제 위에서 예외를 던지므로 사실상 의미가 없어짐
-        return fid;
-    }
-
-    private String randomNumeric(int count) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            builder.append((int) (Math.random() * 10));
-        }
-        return builder.toString();
-    }
-
-    private String calcState(LocalDate fdfrom, LocalDate fdto) {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        if (fdfrom == null || fdto == null) return "공연예정";
-        if (today.isBefore(fdfrom)) return "공연예정";
-        if (today.isAfter(fdto)) return "공연완료";
-        return "공연중";
-    }
 }
