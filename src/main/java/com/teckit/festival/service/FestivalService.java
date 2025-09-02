@@ -4,6 +4,7 @@ import com.teckit.festival.dto.response.*;
 import com.teckit.festival.kafka.FestivalKafkaProducer;
 import com.teckit.festival.repository.FestivalScheduleRepository;
 import com.teckit.festival.util.DateUtil;
+import com.teckit.festival.util.FestivalStatusUtil;
 import org.springframework.transaction.annotation.Propagation;
 import com.teckit.festival.entity.Festival;
 import com.teckit.festival.entity.FestivalDetail;
@@ -59,7 +60,10 @@ public class FestivalService {
     }
 
     public Page<FestivalListResponseDTO> getFestivals(Pageable pageable) {
-        return festivalRepository.findList(pageable);
+        // `findByFstateNot` 쿼리를 사용하고 결과를 DTO로 변환하여 반환
+        Page<Festival> festivals = festivalRepository.findByFstateNot("공연완료", pageable);
+
+        return festivals.map(FestivalListResponseDTO::fromEntity);
     }
 
     public FestivalDetailResponseDTO getFestivalDetail(String fid) {
@@ -302,5 +306,38 @@ public class FestivalService {
         detail.setViews(detail.getViews() + 1);
 
         return detail.getViews();
+    }
+
+    @Transactional
+    public void updateAllFestivalStatus() {
+        log.info("Starting scheduled festival status update from FestivalDetail...");
+
+        // 모든 FestivalDetail 엔티티를 조회
+        List<FestivalDetail> allDetails = festivalDetailRepository.findAll();
+
+        for (FestivalDetail detail : allDetails) {
+            String newStatus = FestivalStatusUtil.calcState(
+                    detail.getFdfrom(),
+                    detail.getFdto()
+            );
+
+            // 상태가 변경되었을 때만 업데이트
+            if (!newStatus.equals(detail.getFstate())) {
+                log.info("Updating status for Festival ID: {} from '{}' to '{}'",
+                        detail.getId(), detail.getFstate(), newStatus);
+
+                // 1. FestivalDetail 엔티티 업데이트 및 저장
+                detail.setFstate(newStatus);
+                festivalDetailRepository.save(detail);
+
+                // 2. 연결된 Festival 엔티티 업데이트 및 저장
+                Festival festival = detail.getFestival();
+                if (festival != null) {
+                    festival.setFstate(newStatus);
+                    festivalRepository.save(festival);
+                }
+            }
+        }
+        log.info("Finished scheduled festival status update.");
     }
 }
