@@ -21,10 +21,11 @@ public class FestivalReviewRequestDTO {
     @Size(max = 512, message = "내용은 512자 이상 작성할 수 없습니다.")
     private String reviewContent;
 
-    public FestivalReview toEntity(Long userId) {
+    public FestivalReview toEntity(Long userId, String userName) {
         return FestivalReview.builder()
                 .reviewContent(reviewContent)
                 .userId(userId)
+                .userName(userName)
                 .build();
     }
 }

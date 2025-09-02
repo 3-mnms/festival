@@ -4,6 +4,7 @@ import com.teckit.festival.dto.request.FestivalReviewRequestDTO;
 import com.teckit.festival.dto.response.FestivalReviewResponseDTO;
 import com.teckit.festival.dto.response.FestivalReviewResultDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
+import com.teckit.festival.security.AuthDetails;
 import com.teckit.festival.service.FestivalReviewService;
 import com.teckit.festival.util.ApiResponseUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -71,9 +72,16 @@ public class FestivalReviewController {
             @ApiResponse(responseCode = "200", description = "페스티벌 기대평 생성 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
     })
-    public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> createReview(@AuthenticationPrincipal String principal, @Valid @RequestBody FestivalReviewRequestDTO festivalReviewRequestDTO, @PathVariable("fId") String fId){
-        Long userId = Long.parseLong(principal);
-        FestivalReviewResponseDTO review = festivalReviewService.createReview(userId, festivalReviewRequestDTO, fId);
+    public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> createReview(Authentication authentication, @Valid @RequestBody FestivalReviewRequestDTO festivalReviewRequestDTO, @PathVariable("fId") String fId){
+        Long userId = Long.parseLong(authentication.getName());
+
+        String userName = null;
+        Object details = authentication.getDetails();
+        if (details instanceof AuthDetails d) {
+            userName = d.getUserName();
+        }
+
+        FestivalReviewResponseDTO review = festivalReviewService.createReview(userId, userName, festivalReviewRequestDTO, fId);
         return ApiResponseUtil.success(review);
     }
 
@@ -84,9 +92,16 @@ public class FestivalReviewController {
             @ApiResponse(responseCode = "200", description = "페스티벌 기대평 수정 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
     })
-    public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> updateReview(@AuthenticationPrincipal String principal, @Valid @RequestBody FestivalReviewRequestDTO festivalReviewRequestDTO, @PathVariable("fId") String fId, @PathVariable("rId") Long rId){
-        Long userId = Long.parseLong(principal);
-        FestivalReviewResponseDTO review = festivalReviewService.updateReview(userId, festivalReviewRequestDTO, fId, rId);
+    public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> updateReview(Authentication authentication, @Valid @RequestBody FestivalReviewRequestDTO festivalReviewRequestDTO, @PathVariable("fId") String fId, @PathVariable("rId") Long rId){
+        Long userId = Long.parseLong(authentication.getName());
+
+        String userName = null;
+        Object details = authentication.getDetails();
+        if (details instanceof AuthDetails d) {
+            userName = d.getUserName();
+        }
+
+        FestivalReviewResponseDTO review = festivalReviewService.updateReview(userId, userName, festivalReviewRequestDTO, fId, rId);
         return ApiResponseUtil.success(review);
     }
 
