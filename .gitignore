@@ -42,5 +42,3 @@ gateway-config
 init
 docker-compose.yml
 uploads/
-
-src/main/resources/firebase/firebase-adminsdk.json

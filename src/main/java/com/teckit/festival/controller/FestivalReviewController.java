@@ -2,6 +2,7 @@ package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.request.FestivalReviewRequestDTO;
 import com.teckit.festival.dto.response.FestivalReviewResponseDTO;
+import com.teckit.festival.dto.response.FestivalReviewResultDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
 import com.teckit.festival.service.FestivalReviewService;
 import com.teckit.festival.util.ApiResponseUtil;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,16 +38,30 @@ public class FestivalReviewController {
             @ApiResponse(responseCode = "200", description = "페스티벌 별 기대평 조회 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
     })
-    public ResponseEntity<SuccessResponse<Page<FestivalReviewResponseDTO>>> getReviews(@PathVariable("fId") String fId, @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "0") int page)
+    public ResponseEntity<SuccessResponse<FestivalReviewResultDTO>> getReviews(@PathVariable("fId") String fId, @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "0") int page)
     {
-        int size = 15;
+        int size = 10;
         int safePage = Math.max(page, 0); //음수로 들어오면 0으로
 
         Sort.Direction direction = sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(safePage, size, Sort.by(direction, "createdAt"));
 
-        Page<FestivalReviewResponseDTO> festivalReviewResponseDTOS = festivalReviewService.getReviews(fId, pageable);
-        return ApiResponseUtil.success(festivalReviewResponseDTOS);
+        FestivalReviewResultDTO festivalReviewResultDTO = festivalReviewService.getReviews(fId, pageable);
+        return ApiResponseUtil.success(festivalReviewResultDTO);
+    }
+
+    @GetMapping(value="/{fId}/myReview")
+    @Operation(summary = "페스티벌 별 본인 기대평 조회",
+            description = "페스티벌 별 본인 기대평 조회 ex) GET /api/festival/review/{fId}/myReview")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "페스티벌 별 본인 기대평 조회 완료",
+                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
+    })
+    public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> getMyReview(@AuthenticationPrincipal String principal, @PathVariable("fId") String fId)
+    {
+        Long userId = Long.parseLong(principal);
+        FestivalReviewResponseDTO festivalReviewResponseDTO = festivalReviewService.getMyReview(fId, userId);
+        return ApiResponseUtil.success(festivalReviewResponseDTO);
     }
 
     @PostMapping(value="/{fId}")
@@ -81,13 +97,11 @@ public class FestivalReviewController {
             @ApiResponse(responseCode = "200", description = "페스티벌 기대평 삭제 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
     })
-    public ResponseEntity<SuccessResponse<Void>> deleteReview(@AuthenticationPrincipal String principal, @PathVariable("fId") String fId, @PathVariable("rId") Long rId){
-        Long userId = Long.parseLong(principal);
-        festivalReviewService.deleteReview(userId, fId, rId);
+    public ResponseEntity<SuccessResponse<Void>> deleteReview(Authentication authentication, @PathVariable("fId") String fId, @PathVariable("rId") Long rId){
+        Long userId = Long.parseLong(authentication.getName());
+        String role = authentication.getAuthorities().iterator().next().getAuthority();
+
+        festivalReviewService.deleteReview(userId, role, fId, rId);
         return ApiResponseUtil.success(null, "기대평 삭제 완료");
     }
-
-
-
-
 }
