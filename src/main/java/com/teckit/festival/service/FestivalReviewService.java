@@ -58,7 +58,7 @@ public class FestivalReviewService {
     }
 
     @Transactional
-    public FestivalReviewResponseDTO createReview(Long userId, @Valid FestivalReviewRequestDTO festivalReviewRequestDTO, String fId) {
+    public FestivalReviewResponseDTO createReview(Long userId, String userName, @Valid FestivalReviewRequestDTO festivalReviewRequestDTO, String fId) {
         FestivalDetail festivalDetail = festivalDetailRepository.findById(fId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
         festivalReviewRepository.findByFestivalDetailAndUserId(festivalDetail, userId)
@@ -66,7 +66,7 @@ public class FestivalReviewService {
                     throw new BusinessException(ErrorCode.REVIEW_ALREADY_EXISTS);
                 });
 
-        FestivalReview festivalReview = festivalReviewRequestDTO.toEntity(userId);
+        FestivalReview festivalReview = festivalReviewRequestDTO.toEntity(userId, userName);
         festivalDetail.getFestivalReviews().add(festivalReview);
         festivalReview.setFestivalDetail(festivalDetail);
 
@@ -78,7 +78,7 @@ public class FestivalReviewService {
     }
 
     @Transactional
-    public FestivalReviewResponseDTO updateReview(Long userId, @Valid FestivalReviewRequestDTO festivalReviewRequestDTO, String fId, Long rId) {
+    public FestivalReviewResponseDTO updateReview(Long userId, String userName, @Valid FestivalReviewRequestDTO festivalReviewRequestDTO, String fId, Long rId) {
         festivalDetailRepository.findById(fId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
 
@@ -89,6 +89,7 @@ public class FestivalReviewService {
             throw new BusinessException(ErrorCode.REVIEW_NOT_ALLOWED);
 
         festivalReview.setReviewContent(festivalReviewRequestDTO.getReviewContent());
+        festivalReview.setReviewContent(userName);
         festivalReviewRepository.save(festivalReview);
 
         return FestivalReviewResponseDTO.fromEntity(festivalReview);

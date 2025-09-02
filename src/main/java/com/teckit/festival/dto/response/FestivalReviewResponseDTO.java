@@ -24,6 +24,9 @@ public class FestivalReviewResponseDTO {
     @Schema(description = "사용자 userId")
     private Long userId;
 
+    @Schema(description = "사용자 userName")
+    private String userName;
+
     @Schema(description = "기대평 생성 시간")
     private LocalDateTime createdAt;
 
@@ -36,6 +39,7 @@ public class FestivalReviewResponseDTO {
                 .reviewId(festivalReview.getReviewId())
                 .reviewContent(festivalReview.getReviewContent())
                 .userId(festivalReview.getUserId())
+                .userName(festivalReview.getUserName())
                 .createdAt(festivalReview.getCreatedAt())
                 .updatedAt(festivalReview.getUpdatedAt())
                 .build();
