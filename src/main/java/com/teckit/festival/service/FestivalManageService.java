@@ -64,6 +64,14 @@ public class FestivalManageService {
                 ? contentFiles.stream().map(s3Service::uploadFile).toList()
                 : List.of();
 
+        List<String> mergedContentFiles = new java.util.ArrayList<>();
+        if (detailReq.getContentFile() != null) {
+            mergedContentFiles.addAll(detailReq.getContentFile());
+        }
+        if (contentUrls != null && !contentUrls.isEmpty()) {
+            mergedContentFiles.addAll(contentUrls);
+        }
+
         // 2. 기본 데이터 가공
         String fid = festivalIdGenerator.generateUniqueFid();
         int safeTicketPick = Math.max(1, detailReq.getTicketPick());
@@ -94,7 +102,7 @@ public class FestivalManageService {
                 .maxPurchase(safeMaxPurchase)
                 .prfage(detailReq.getPrfage())
                 .posterFile(posterUrl)
-                .contentFile(contentUrls)
+                .contentFile(mergedContentFiles)
                 .entrpsnmH(detailReq.getEntrpsnmH())
                 .runningTime(detailReq.getRunningTime())
                 .updatedate(LocalDateTime.now())
