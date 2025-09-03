@@ -1,6 +1,7 @@
 package com.teckit.festival.repository;
 
 import com.teckit.festival.entity.FestivalDetail;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -30,5 +31,8 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
 
     // 주어진 ID를 가진 공연 상세 정보가 존재하는지 확인
     boolean existsById(String fid);
+
+    @Query("select fd from FestivalDetail fd where fd.isGeocoded = false")
+    List<FestivalDetail> findGeocoding(Pageable pageable);
 
 }
