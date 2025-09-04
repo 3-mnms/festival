@@ -39,7 +39,14 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         // 게이트웨이가 붙여주는 헤더 (✅ userId 사용)
         final String userIdHeader = trimToNull(request.getHeader("X-User-Id"));
         final String rolesHdr     = trimToNull(request.getHeader("X-User-Role"));
-
+        final String userNameHeader = trimToNull(request.getHeader("X-User-Name"));
+        String userName = "";
+        if(userNameHeader != null) {
+            userName = new String(
+                    java.util.Base64.getUrlDecoder().decode(userNameHeader),
+                    java.nio.charset.StandardCharsets.UTF_8
+            );
+        }
         Authentication current = SecurityContextHolder.getContext().getAuthentication();
         boolean isAnonymous = (current instanceof AnonymousAuthenticationToken);
         boolean canSetAuth = (current == null) || isAnonymous;
@@ -70,7 +77,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             // principal = userId(String) → Controller에서 Long.parseLong(principal.getName()) 가능
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, authorities);
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            auth.setDetails(new AuthDetails(request, userName));
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 

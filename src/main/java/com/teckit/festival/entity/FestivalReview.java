@@ -22,6 +22,9 @@ public class FestivalReview extends BaseEntity{
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "user_name", nullable = false)
+    private String userName;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fid")
     private FestivalDetail festivalDetail;
