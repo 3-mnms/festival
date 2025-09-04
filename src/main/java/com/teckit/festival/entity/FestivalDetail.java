@@ -2,6 +2,7 @@ package com.teckit.festival.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.teckit.festival.dto.FestivalKafkaDTO;
+import com.teckit.festival.enumeration.GeocodeStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -56,6 +57,17 @@ public class FestivalDetail {
     private String posterFile;
     private String entrpsnmH;
     private String runningTime;
+
+    @Column(name = "latitude",  columnDefinition = "DECIMAL(10,7)")
+    private Double latitude; //위도
+
+    @Column(name = "longitude",  columnDefinition = "DECIMAL(10,7)")
+    private Double longitude;//경도
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private GeocodeStatus isGeocoded = GeocodeStatus.PENDING;//지오코드 여부(위도, 경도)
 
     @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
