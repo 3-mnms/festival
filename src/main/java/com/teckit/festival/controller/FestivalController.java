@@ -3,6 +3,7 @@ package com.teckit.festival.controller;
 import com.teckit.festival.dto.response.FestivalDetailResponseDTO;
 import com.teckit.festival.dto.response.FestivalListResponseDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
+import com.teckit.festival.service.FestivalGeocodeService;
 import com.teckit.festival.service.FestivalService;
 import com.teckit.festival.util.ApiResponseUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +30,7 @@ import java.util.Map;
 public class FestivalController {
 
     private final FestivalService festivalService;
+    private final FestivalGeocodeService festivalGeocodeService;
 
     @Operation(summary = "공연 검색", description = "장르, 키워드, 또는 둘 다로 공연을 검색합니다.")
     @GetMapping("/search")
@@ -143,5 +145,11 @@ public class FestivalController {
         int currentViews = festivalService.getViews(fid);
         Map<String, Object> result = Map.of("views", currentViews);
         return ApiResponseUtil.success(result, "이미 조회한 공연");
+    }
+
+    @PostMapping("/geocode")
+    public ResponseEntity<SuccessResponse<Integer>> run(@RequestParam(defaultValue = "100") int size) {
+        int success = festivalGeocodeService.geocodeBatch(size);
+        return ApiResponseUtil.success(success, "성공");
     }
 }
