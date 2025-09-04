@@ -42,4 +42,7 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
 
     // 공연 상세 ID(fid)를 가진 Festival 엔티티가 존재하는지 확인
     boolean existsByFestivalDetail_Id(String fid);
+
+    // fstate가 "공연완료"가 아닌 모든 Festival을 Pageable 객체로 반환
+    Page<Festival> findByFstateNot(String fstate, Pageable pageable);
 }
