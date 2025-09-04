@@ -32,7 +32,7 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
     // 주어진 ID를 가진 공연 상세 정보가 존재하는지 확인
     boolean existsById(String fid);
 
-    @Query("select fd from FestivalDetail fd where fd.isGeocoded = false")
+    @Query("select fd from FestivalDetail fd where fd.isGeocoded= 'PENDING'")
     List<FestivalDetail> findGeocoding(Pageable pageable);
 
 }
