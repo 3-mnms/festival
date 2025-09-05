@@ -1,6 +1,7 @@
 package com.teckit.festival.controller;
 
 import com.teckit.festival.dto.response.FestivalReviewResultDTO;
+import com.teckit.festival.dto.response.NearbyFestivalListDTO;
 import com.teckit.festival.dto.response.UserGeocodeInfoDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
 import com.teckit.festival.service.FestivalReviewService;
@@ -37,5 +38,18 @@ public class UserGeocodeController {
     {
         UserGeocodeInfoDTO userGeocodeInfoDTO = userGeocodeService.geoCodeInfo();
         return ApiResponseUtil.success(userGeocodeInfoDTO);
+    }
+
+    @GetMapping("/nearby/festivalList")
+    @Operation(summary = "사용자 주소 근처 페스티벌 조회",
+            description = "사용자 주소 근처 페스티벌 조회, ex) GET /nearby/festivalList")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "사용자 주소 근처 페스티벌 조회 완료",
+                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
+    })
+    public ResponseEntity<SuccessResponse<NearbyFestivalListDTO>> nearByFestivalList()
+    {
+        NearbyFestivalListDTO nearbyFestivalListDTO = userGeocodeService.findNearbyFestival();
+        return ApiResponseUtil.success(nearbyFestivalListDTO);
     }
 }

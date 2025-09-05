@@ -1,5 +1,6 @@
 package com.teckit.festival.repository;
 
+import com.teckit.festival.dto.NearbyFestivalInterface;
 import com.teckit.festival.entity.FestivalDetail;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -34,5 +35,22 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
 
     @Query("select fd from FestivalDetail fd where fd.isGeocoded= 'PENDING'")
     List<FestivalDetail> findGeocoding(Pageable pageable);
+
+    @Query(value = """
+    SELECT fd.fname AS name, fd.latitude AS latitude, fd.longitude AS longitude, DATE(fd.fdto) AS finishDate,
+        (6371 * 2 * ASIN(SQRT(POW(SIN(RADIANS((:lat - fd.latitude)/2)), 2) +
+        COS(RADIANS(:lat)) * COS(RADIANS(fd.latitude)) *
+        POW(SIN(RADIANS((:lon - fd.longitude)/2)), 2)))) AS distance
+    FROM festival_detail fd
+    WHERE DATE(fd.fdto) >= CURRENT_DATE
+      AND fd.latitude IS NOT NULL AND fd.longitude IS NOT NULL
+      AND fd.latitude BETWEEN (:lat - (:radiusKm / 111.32)) AND (:lat + (:radiusKm / 111.32))
+      AND fd.longitude BETWEEN (:lon - (:radiusKm / (111.32 * COS(RADIANS(:lat))))) AND (:lon + (:radiusKm / (111.32 * COS(RADIANS(:lat)))))
+    HAVING distance <= :radiusKm
+    ORDER BY distance ASC
+    LIMIT 3
+    """, nativeQuery = true)
+    List<NearbyFestivalInterface> findTop3NearByFestivalDetail(double lat, double lon, double radiusKm);
+
 
 }
