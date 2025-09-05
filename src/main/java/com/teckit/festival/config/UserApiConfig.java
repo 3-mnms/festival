@@ -9,12 +9,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.http.HttpHeaders;
-
+import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 
 
@@ -62,6 +63,9 @@ public class UserApiConfig {
                 .uri(userServiceUrl)
                 .headers(this::sendAuthentication)
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, response -> {
+                            return Mono.error(new BusinessException(ErrorCode.USER_GEOCODE_FAIL));
+                })
                 .bodyToMono(new ParameterizedTypeReference<SuccessResponse<UserGeocodeInfoDTO>>() {})
                 .block();
         return userGeocodeInfo.getData();
