@@ -11,7 +11,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "요청 값이 유효하지 않습니다."),
     NO_AUTHORITY(HttpStatus.FORBIDDEN, "권한이 없습니다."),
     NOT_OWNER(HttpStatus.FORBIDDEN, "본인이 등록한 공연만 처리할 수 있습니다."),
-
+    UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "로그인한 사용자만 가능합니다."),
     FESTIVAL_NOT_FOUND(HttpStatus.NOT_FOUND, "공연을 찾을 수 없습니다."),
     FESTIVAL_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "공연 상세 정보를 찾을 수 없습니다."),
     SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "공연 일정을 찾을 수 없습니다."),
