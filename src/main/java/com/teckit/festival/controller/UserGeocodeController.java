@@ -1,0 +1,41 @@
+package com.teckit.festival.controller;
+
+import com.teckit.festival.dto.response.FestivalReviewResultDTO;
+import com.teckit.festival.dto.response.UserGeocodeInfoDTO;
+import com.teckit.festival.exception.global.SuccessResponse;
+import com.teckit.festival.service.FestivalReviewService;
+import com.teckit.festival.service.UserGeocodeService;
+import com.teckit.festival.util.ApiResponseUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/festival/geocode")
+@RequiredArgsConstructor
+@Tag(name = "거리 기반 페스티벌 추천 API", description = "시용자 위도 경도 get")
+public class UserGeocodeController {
+    private final UserGeocodeService userGeocodeService;
+
+    @GetMapping("/user/addressInfo")
+    @Operation(summary = "사용자 위도 경도 정보 조회",
+            description = "사용자 위도 경도 정보 조회, ex) GET /api/festival/geocode/user/addressInfo")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "사용자 위도 경도 정보 조회 완료",
+                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
+    })
+    public ResponseEntity<SuccessResponse<UserGeocodeInfoDTO>> getUserGeocodeInfo()
+    {
+        UserGeocodeInfoDTO userGeocodeInfoDTO = userGeocodeService.geoCodeInfo();
+        return ApiResponseUtil.success(userGeocodeInfoDTO);
+    }
+}
