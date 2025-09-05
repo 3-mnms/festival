@@ -5,6 +5,8 @@ import com.teckit.festival.dto.NearbyFestivalInterface;
 import com.teckit.festival.dto.response.NearbyFestivalDTO;
 import com.teckit.festival.dto.response.NearbyFestivalListDTO;
 import com.teckit.festival.dto.response.UserGeocodeInfoDTO;
+import com.teckit.festival.exception.BusinessException;
+import com.teckit.festival.exception.ErrorCode;
 import com.teckit.festival.repository.FestivalDetailRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,9 @@ public class UserGeocodeService {
 
     public NearbyFestivalListDTO findNearbyFestival(){
         UserGeocodeInfoDTO userGeocodeInfoDTO = geoCodeInfo();
+
+        if(userGeocodeInfoDTO.getLatitude() == null || userGeocodeInfoDTO.getLongitude() == null)
+            throw new BusinessException(ErrorCode.USER_GEOCODE_FAIL);
 
         NearbyFestivalListDTO nearbyFestivalListDTO = new NearbyFestivalListDTO().builder().build();
         nearbyFestivalListDTO.setUserGeocodeInfo(userGeocodeInfoDTO);
