@@ -36,7 +36,7 @@ public class UserGeocodeService {
 
         List<NearbyFestivalDTO> nearbyFestivalDTOS = festivalDetailRepository.findTop3NearByFestivalDetail(userGeocodeInfoDTO.getLatitude(), userGeocodeInfoDTO.getLongitude(), 40)
                                                             .stream()
-                                                            .map(NearbyFestivalInterface::toDto)   // ← 여기 한 줄로 변환 끝
+                                                            .map(NearbyFestivalInterface::toDto)
                                                             .toList();
         nearbyFestivalListDTO.setFestivalList(nearbyFestivalDTOS);
 
