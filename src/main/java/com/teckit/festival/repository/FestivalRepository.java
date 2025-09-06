@@ -45,4 +45,13 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
 
     // fstate가 "공연완료"가 아닌 모든 Festival을 Pageable 객체로 반환
     Page<Festival> findByFstateNot(String fstate, Pageable pageable);
+
+    // 공연완료 제외 + 포스터/스토리 있는 공연만 조회 (조회수 순 정렬) (추후 수정 가능)
+    @Query("SELECT f FROM Festival f " +
+            "JOIN f.festivalDetail fd " +
+            "WHERE f.fstate <> '공연완료' " +
+            "AND (fd.story IS NOT NULL OR fd.contentFile IS NOT EMPTY) " +
+            "ORDER BY fd.views DESC")
+    Page<Festival> findLiveFestivalsWithContentAndStory(Pageable pageable);
+
 }

@@ -59,13 +59,20 @@ public class FestivalService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
     }
 
-    public Page<FestivalListResponseDTO> getFestivals(Pageable pageable) {
-        // `findByFstateNot` 쿼리를 사용하고 결과를 DTO로 변환하여 반환
-        Page<Festival> festivals = festivalRepository.findByFstateNot("공연완료", pageable);
-
+    @Transactional(readOnly = true)
+    public Page<FestivalListResponseDTO> getFestivals(Pageable pageable, boolean all) {
+        Page<Festival> festivals;
+        if (all) {
+            // all=true → 전체 조회 (페이징 미적용)
+            festivals = festivalRepository.findLiveFestivalsWithContentAndStory(Pageable.unpaged());
+        } else {
+            // 페이지네이션 적용
+            festivals = festivalRepository.findLiveFestivalsWithContentAndStory(pageable);
+        }
         return festivals.map(FestivalListResponseDTO::fromEntity);
     }
 
+    @Transactional(readOnly = true)
     public FestivalDetailResponseDTO getFestivalDetail(String fid) {
         return getFestivalDetail(fid, null);
     }

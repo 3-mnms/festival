@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
@@ -76,17 +77,19 @@ public class FestivalController {
         return Sort.by(new Sort.Order(dir, mapped));
     }
 
-    @Operation( summary = "공연 목록 조회", description = "조회수 순(내림차순)으로 공연 목록을 정렬 합니다.")
+    @Operation(summary = "공연 목록 조회", description = "'공연완료' 제외 공연을 조회수 순으로 정렬합니다.")
     @GetMapping
     public ResponseEntity<SuccessResponse<Page<FestivalListResponseDTO>>> getFestivals(
-            @RequestParam(required = false) String sort
+            @PageableDefault(
+                    size = 100,
+                    sort = "festivalDetail.views",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable,
+            @RequestParam(required = false, defaultValue = "false") boolean all
     ) {
-        Sort sortOption = toSort(sort);
-        Pageable pageable = PageRequest.of(0, 15, sortOption);
-        Page<FestivalListResponseDTO> page = festivalService.getFestivals(pageable);
+        Page<FestivalListResponseDTO> page = festivalService.getFestivals(pageable, all);
         return ApiResponseUtil.success(page, "페스티벌 목록 조회 성공");
     }
-
 
     @Operation(summary = "공연 상세 조회", description = "공연 ID(fid)로 상세 정보를 조회합니다.")
     @GetMapping("/{fid}")

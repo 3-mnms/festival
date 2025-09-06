@@ -21,7 +21,7 @@ public class FestivalScheduler {
      * `0 0 3 ? * SUN` : 초(0) 분(0) 시(3) 일(상관없음) 월(모든 달) 요일(일요일)
      */
     //@Scheduled(cron = "0 20 12 ? * TUE")
-    @Scheduled(cron = "0 0 3 ? * SUN")
+    @Scheduled(cron = "0 0 4 ? * SUN")
     public void fetchAndSaveWeeklyFestivals() {
         log.info("주간 API 수집 스케줄러 실행: {}", LocalDate.now());
 

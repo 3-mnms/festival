@@ -13,12 +13,11 @@ public class FestivalStatusScheduler {
 
     private final FestivalService festivalService;
 
-    // 매일 새벽 4시에 실행되도록 설정
-    //@Scheduled(cron = "0 0 4 * * *")
+    // 매일 자정에 실행되도록 설정
+    @Scheduled(cron = "0 0 0 * * *")
     // test
-    @Scheduled(cron = "0 59 13 ? * TUE")
+    //@Scheduled(cron = "0 59 13 ? * TUE")
     public void updateFestivalStatus() {
         festivalService.updateAllFestivalStatus();
-        log.info("Finished scheduled festival status update.");
     }
 }
