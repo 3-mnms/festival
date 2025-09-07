@@ -7,12 +7,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Schema(description = "페스티벌 기대평 AI 분석 응답 DTO", name = "ReviewAnalyzeResponseDTO")
+@Schema(description = "페스티벌 기대평 AI 분석 응답 DTO", name = "AiReviewResponseDTO")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AiResponseDTO {
+public class AiReviewResponseDTO {
     @JsonProperty("summary")
     @Schema(description = "새로운 기대평 요약 내용")
     private String analyzeContent;
