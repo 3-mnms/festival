@@ -1,17 +1,23 @@
 package com.teckit.festival.service;
 
-import com.teckit.festival.dto.request.AiReviewRequestDTO;
-import com.teckit.festival.dto.response.AiReviewResponseDTO;
+import com.teckit.festival.dto.request.AiActivityRequestDTO;
+import com.teckit.festival.dto.response.AiActivityResponseDTO;
 import com.teckit.festival.dto.response.KakaoResponseDTO;
+import com.teckit.festival.entity.Activity;
+import com.teckit.festival.entity.Course;
 import com.teckit.festival.entity.NearbyFestival;
 import com.teckit.festival.exception.BusinessException;
 import com.teckit.festival.exception.ErrorCode;
+import com.teckit.festival.repository.ActivityRepository;
+import com.teckit.festival.repository.CourseRepository;
+import com.teckit.festival.repository.NearbyFestivalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -21,29 +27,44 @@ import java.util.List;
 public class ActivityService {
     private final KakaoSearchService kakaoSearchService;
     private final WebClient webClient;
+    private final NearbyFestivalRepository nearbyFestivalRepository;
+    private final ActivityRepository activityRepository;
+    private final CourseRepository courseRepository;
 
     @Transactional
-    public void getActivities(NearbyFestival nearbyFestival){
-        List<KakaoResponseDTO> restaurants = kakaoSearchService.activitySearch("FD6", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3, 15)
-                .orElse(null);
+    public void getActivities(Long userId){
+        List<NearbyFestival> nearbyList = nearbyFestivalRepository.findByUserIdOrderByDistanceAsc(userId);
+        if(nearbyList.isEmpty()){
+            throw new BusinessException(ErrorCode.NEARBY_FESTIVAL_NOT_FOUND);
+        }
+        for(NearbyFestival nearbyFestival: nearbyList) {
+            List<KakaoResponseDTO> restaurants = kakaoSearchService.activitySearch("FD6", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3000, 15)
+                    .orElse(Collections.emptyList());
 
-        List<KakaoResponseDTO> hotPlaces = kakaoSearchService.activitySearch("AT4", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3, 15)
-                .orElse(null);
+            List<KakaoResponseDTO> hotPlaces = kakaoSearchService.activitySearch("AT4", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3000, 15)
+                    .orElse(Collections.emptyList());
 
-
-        AiReviewResponseDTO responseDTO = callAiActivity(restaurants, hotPlaces);
+            AiActivityResponseDTO responseDTO = callAiActivity(restaurants, hotPlaces);
+            List<Activity> activityList = AiActivityResponseDTO.convertToActivity(responseDTO, nearbyFestival);
+            Course course = AiActivityResponseDTO.convertToCourse(responseDTO, nearbyFestival);
+            activityRepository.saveAll(activityList);
+            courseRepository.save(course);
+        }
 
     }
 
-    private AiReviewResponseDTO callAiActivity(List<KakaoResponseDTO> restaurants, List<KakaoResponseDTO> hotPlaces) {
+    private AiActivityResponseDTO callAiActivity(List<KakaoResponseDTO> restaurants, List<KakaoResponseDTO> hotPlaces) {
 
-//        AiReviewRequestDTO activityRequest = AiReviewRequestDTO.from();
+        AiActivityRequestDTO activityRequest = AiActivityRequestDTO.builder()
+                .restaurants(restaurants)
+                .hotPlaces(hotPlaces)
+                .build();
 
-        AiReviewResponseDTO response = webClient.post()
-                .uri("/festival/activity/recommend")
-//                .bodyValue(activityRequest)
+        AiActivityResponseDTO response = webClient.post()
+                .uri("/activity/recommend")
+                .bodyValue(activityRequest)
                 .retrieve()
-                .bodyToMono(AiReviewResponseDTO.class)
+                .bodyToMono(AiActivityResponseDTO.class)
                 .block();
 
         if (response == null) {

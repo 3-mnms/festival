@@ -20,6 +20,9 @@ public class Activity {
     @Column(name = "activity_name", nullable = false)
     private String activityName;
 
+    @Column(name = "address_name", nullable = false)
+    private String addressName;
+
     @Column(name = "latitude",  columnDefinition = "DECIMAL(10,7)")
     private Double latitude; //위도
 

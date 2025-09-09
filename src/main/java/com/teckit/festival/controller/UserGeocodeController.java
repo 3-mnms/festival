@@ -4,6 +4,7 @@ import com.teckit.festival.dto.response.FestivalReviewResultDTO;
 import com.teckit.festival.dto.response.NearbyFestivalListDTO;
 import com.teckit.festival.dto.response.UserGeocodeInfoDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
+import com.teckit.festival.service.ActivityService;
 import com.teckit.festival.service.FestivalReviewService;
 import com.teckit.festival.service.UserGeocodeService;
 import com.teckit.festival.util.ApiResponseUtil;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "거리 기반 페스티벌 추천 API", description = "시용자 위도 경도 get")
 public class UserGeocodeController {
     private final UserGeocodeService userGeocodeService;
+    private final ActivityService activityService;
 
     @GetMapping("/user/addressInfo")
     @Operation(summary = "사용자 위도 경도 정보 조회",
@@ -54,4 +56,19 @@ public class UserGeocodeController {
         NearbyFestivalListDTO nearbyFestivalListDTO = userGeocodeService.getNearbyFestival(userId);
         return ApiResponseUtil.success(nearbyFestivalListDTO);
     }
+
+    @GetMapping("/nearby/activities")
+    @Operation(summary = "페스티벌 공연장 근처 놀거리, 맛집 조회",
+            description = "페스티벌 공연장 근처 놀거리, 맛집 조회, ex) GET /nearby/activities")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "사용자 주소 근처 페스티벌 조회 완료",
+                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
+    })
+    public ResponseEntity<SuccessResponse<Void>> nearByActivityList(@AuthenticationPrincipal String principal)
+    {
+        Long userId = Long.parseLong(principal);
+        activityService.getActivities(userId);
+        return ApiResponseUtil.success();
+    }
+
 }

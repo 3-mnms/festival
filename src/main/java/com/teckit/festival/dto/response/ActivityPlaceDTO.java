@@ -1,6 +1,7 @@
-package com.teckit.festival.dto;
+package com.teckit.festival.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.teckit.festival.enumeration.ActivityType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
