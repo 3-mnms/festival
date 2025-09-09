@@ -7,7 +7,7 @@ import java.time.LocalDate;
 public interface NearbyFestivalInterface {
     String getFestivalDetailId();
     String getName();
-    String getCast();
+    String getFestivalCast();
     String getAddress();
     Double getLatitude();
     Double getLongitude();
@@ -19,7 +19,7 @@ public interface NearbyFestivalInterface {
         return NearbyFestivalDTO.builder()
                 .festivalDetailId(getFestivalDetailId())
                 .name(getName())
-                .cast(getCast())
+                .cast(getFestivalCast())
                 .address(getAddress())
                 .latitude(getLatitude())
                 .longitude(getLongitude())
