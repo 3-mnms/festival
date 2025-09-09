@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -44,5 +45,26 @@ public class KakaoSearchService {
 
         KakaoResponseDTO kakaoResponseDTO = response.getDocuments().get(0);
         return Optional.of(kakaoResponseDTO);
+    }
+
+    public Optional<List<KakaoResponseDTO>> activitySearch(String groupCode, double longitude, double latitude, int radius, int size) {
+        log.info("카카오 장소 탐색 - category={}, x={}, y={}, radius={} size={}", groupCode, longitude, latitude, radius, size);
+
+        KakaoKeywordSearchDTO response = webClient.get()
+                .uri(baseUrl + "/v2/local/search/category.json?category_group_code={groupCode}&x={x}&y={y}&radius={radius}&size={size}"
+                        ,groupCode, longitude, latitude, radius, size)
+                .header(HttpHeaders.AUTHORIZATION, "KakaoAK " + restApiKey)
+                .header(HttpHeaders.ACCEPT, "application/json")
+                .retrieve()
+                .bodyToMono(KakaoKeywordSearchDTO.class)
+                .block();
+
+        log.info("kakao response={}", response);
+
+        if (response == null || response.getDocuments() == null || response.getDocuments().isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(response.getDocuments());
     }
 }
