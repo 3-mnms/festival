@@ -37,7 +37,7 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
     List<FestivalDetail> findGeocoding(Pageable pageable);
 
     @Query(value = """
-    SELECT fd.id AS festivalDetailId, fd.fname AS name, fd.fcast AS cast, fd.faddress AS address, fd.latitude AS latitude, fd.longitude AS longitude, DATE(fd.fdto) AS finishDate,
+    SELECT fd.id AS festivalDetailId, fd.fname AS name, fd.fcast AS cast, fd.faddress AS address, fd.latitude AS latitude, fd.longitude AS longitude, DATE(fd.fdto) AS finishDate, fd.poster_file AS poster
         (6371 * 2 * ASIN(SQRT(POW(SIN(RADIANS((:lat - fd.latitude)/2)), 2) +
         COS(RADIANS(:lat)) * COS(RADIANS(fd.latitude)) *
         POW(SIN(RADIANS((:lon - fd.longitude)/2)), 2)))) AS distance

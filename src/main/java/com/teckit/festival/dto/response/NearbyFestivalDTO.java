@@ -40,6 +40,9 @@ public class NearbyFestivalDTO {
     @Schema(description = "사용자 주소 - 페스티벌 공연장 거리")
     private Double distance;
 
+    @Schema(description = "공연 포스터")
+    private String poster;
+
     @Schema(hidden = true)
     public static NearbyFestivalDTO fromEntity(NearbyFestival nearbyFestival) {
         FestivalDetail festivalDetail = nearbyFestival.getFestivalDetail();
@@ -53,6 +56,7 @@ public class NearbyFestivalDTO {
                 .longitude(nearbyFestival.getLongitude())
                 .finishDate(festivalDetail.getFdto())
                 .distance(nearbyFestival.getDistance())
+                .poster(festivalDetail.getPosterFile())
                 .build();
     }
 

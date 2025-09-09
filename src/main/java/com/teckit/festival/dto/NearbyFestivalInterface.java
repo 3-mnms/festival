@@ -13,6 +13,7 @@ public interface NearbyFestivalInterface {
     Double getLongitude();
     LocalDate getFinishDate();
     Double getDistance();
+    String getPoster();
 
     default NearbyFestivalDTO toDto() {
         return NearbyFestivalDTO.builder()
@@ -24,6 +25,7 @@ public interface NearbyFestivalInterface {
                 .longitude(getLongitude())
                 .finishDate(getFinishDate())
                 .distance(getDistance())
+                .poster(getPoster())
                 .build();
     }
 }
