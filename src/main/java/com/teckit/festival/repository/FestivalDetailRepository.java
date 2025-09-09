@@ -37,15 +37,25 @@ public interface FestivalDetailRepository extends JpaRepository<FestivalDetail, 
     List<FestivalDetail> findGeocoding(Pageable pageable);
 
     @Query(value = """
-    SELECT fd.id AS festivalDetailId, fd.fname AS name, fd.fcast AS cast, fd.faddress AS address, fd.latitude AS latitude, fd.longitude AS longitude, DATE(fd.fdto) AS finishDate, fd.poster_file AS poster
-        (6371 * 2 * ASIN(SQRT(POW(SIN(RADIANS((:lat - fd.latitude)/2)), 2) +
-        COS(RADIANS(:lat)) * COS(RADIANS(fd.latitude)) *
-        POW(SIN(RADIANS((:lon - fd.longitude)/2)), 2)))) AS distance
+    SELECT fd.id AS festivalDetailId, fd.fname AS name, fd.fcast AS festivalCast, fd.faddress AS address, fd.latitude AS latitude, fd.longitude AS longitude, DATE(fd.fdto) AS finishDate, fd.poster_file AS poster,
+        ROUND(
+            6371 * 2 * ASIN(
+                SQRT(
+                    POW(SIN(RADIANS((:lat - fd.latitude) / 2)), 2) +
+                    COS(RADIANS(:lat)) * COS(RADIANS(fd.latitude)) *
+                    POW(SIN(RADIANS((:lon - fd.longitude) / 2)), 2)
+                )
+            ),
+            2
+        ) AS distance
     FROM festival_detail fd
     WHERE DATE(fd.fdto) >= CURRENT_DATE
-      AND fd.latitude IS NOT NULL AND fd.longitude IS NOT NULL
-      AND fd.latitude BETWEEN (:lat - (:radiusKm / 111.32)) AND (:lat + (:radiusKm / 111.32))
-      AND fd.longitude BETWEEN (:lon - (:radiusKm / (111.32 * COS(RADIANS(:lat))))) AND (:lon + (:radiusKm / (111.32 * COS(RADIANS(:lat)))))
+      AND fd.latitude IS NOT NULL
+      AND fd.longitude IS NOT NULL
+      AND fd.latitude BETWEEN (:lat - (:radiusKm / 111.32))
+                         AND (:lat + (:radiusKm / 111.32))
+      AND fd.longitude BETWEEN (:lon - (:radiusKm / (111.32 * COS(RADIANS(:lat))))) 
+                          AND (:lon + (:radiusKm / (111.32 * COS(RADIANS(:lat)))))
     HAVING distance <= :radiusKm
     ORDER BY distance ASC
     LIMIT 3
