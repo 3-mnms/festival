@@ -253,7 +253,7 @@ public class FestivalService {
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
                 .queryParam("cpage", "1")
-                .queryParam("rows", "200")
+                .queryParam("rows", "100")
                 .toUriString();
 
         FestivalListDTO list = fetchAndParseXml(restClient, uri, FestivalListDTO.class);
