@@ -57,31 +57,11 @@ public class FestivalController {
         return ApiResponseUtil.success(categories);
     }
 
-    // views 정렬 옵션만 허용
-    private static final Map<String, String> SORT_MAP = Map.of(
-            "views", "festivalDetail.views"
-    );
-
-    private Sort toSort(String sortParam) {
-        // 기본 정렬을 "views,desc"로 고정합니다.
-        if (sortParam == null || sortParam.isBlank()) {
-            return Sort.by(Sort.Order.desc("festivalDetail.views"));
-        }
-        // "key,dir" 형식 지원 (예: views,asc / views,desc)
-        String[] parts = sortParam.split(",", 2);
-        String key = parts[0].trim().toLowerCase();
-        String mapped = SORT_MAP.getOrDefault(key, "festivalDetail.views");
-        Sort.Direction dir = (parts.length > 1)
-                ? Sort.Direction.fromOptionalString(parts[1].trim().toUpperCase()).orElse(Sort.Direction.DESC)
-                : Sort.Direction.DESC;
-        return Sort.by(new Sort.Order(dir, mapped));
-    }
-
     @Operation(summary = "공연 목록 조회", description = "'공연완료' 제외 공연을 조회수 순으로 정렬합니다.")
     @GetMapping
     public ResponseEntity<SuccessResponse<Page<FestivalListResponseDTO>>> getFestivals(
             @PageableDefault(
-                    size = 100,
+                    size = 20,
                     sort = "festivalDetail.views",
                     direction = Sort.Direction.DESC
             ) Pageable pageable,
@@ -154,5 +134,16 @@ public class FestivalController {
     public ResponseEntity<SuccessResponse<Integer>> run(@RequestParam(defaultValue = "100") int size) {
         int success = festivalGeocodeService.geocodeBatch(size);
         return ApiResponseUtil.success(success, "성공");
+    }
+
+    @Operation(summary = "카테고리별 공연 목록 조회", description = "선택한 장르명(genrenm)에 해당하는 공연들을 15개 단위로 페이징 조회합니다.")
+    @GetMapping("/categories/{genrenm}")
+    public ResponseEntity<SuccessResponse<Page<FestivalListResponseDTO>>> getFestivalsByCategory(
+            @PathVariable String genrenm,
+            @PageableDefault(size = 15, sort = "festivalDetail.views", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        Page<FestivalListResponseDTO> page = festivalService.getFestivalsByCategory(genrenm, pageable);
+        return ApiResponseUtil.success(page, "카테고리별 공연 목록 조회 성공");
     }
 }

@@ -59,6 +59,7 @@ public class FestivalService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND));
     }
 
+
     @Transactional(readOnly = true)
     public Page<FestivalListResponseDTO> getFestivals(Pageable pageable, boolean all) {
         Page<Festival> festivals;
@@ -346,5 +347,10 @@ public class FestivalService {
             }
         }
         log.info("Finished scheduled festival status update.");
+    }
+
+    public Page<FestivalListResponseDTO> getFestivalsByCategory(String genrenm, Pageable pageable) {
+        Page<Festival> festivals = festivalRepository.findByGenrenm(genrenm, pageable);
+        return festivals.map(FestivalListResponseDTO::fromEntity);
     }
 }

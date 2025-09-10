@@ -50,8 +50,21 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
     @Query("SELECT f FROM Festival f " +
             "JOIN f.festivalDetail fd " +
             "WHERE f.fstate <> '공연완료' " +
+            "AND (fd.story IS NOT NULL OR fd.contentFile IS NOT EMPTY)")
+    //" +
+    //        "ORDER BY fd.views DESC")
+    Page<Festival> findLiveFestivalsWithContentAndStory(Pageable pageable);
+
+    // 카테고리 별로 조회
+    @Query("SELECT DISTINCT f.genrenm FROM Festival f")
+    Page<String> findDistinctGenrenm(Pageable pageable);
+
+    @Query("SELECT f FROM Festival f JOIN f.festivalDetail fd " +
+            "WHERE f.fstate <> '공연완료' " +
             "AND (fd.story IS NOT NULL OR fd.contentFile IS NOT EMPTY) " +
             "ORDER BY fd.views DESC")
-    Page<Festival> findLiveFestivalsWithContentAndStory(Pageable pageable);
+    Page<Festival> findFestivals(Pageable pageable);
+
+    Page<Festival> findByGenrenm(String genrenm, Pageable pageable);
 
 }
