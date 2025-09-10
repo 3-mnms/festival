@@ -47,7 +47,7 @@ public class FestivalReviewAnalyzeService {
         );
 
         AiReviewResponseDTO response = webClient.post()
-                .uri("/festival/review/analyze")
+                .uri("/review/analyze")
                 .bodyValue(reviewRequest)
                 .retrieve()
                 .bodyToMono(AiReviewResponseDTO.class)

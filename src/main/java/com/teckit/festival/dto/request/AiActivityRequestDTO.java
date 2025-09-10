@@ -1,7 +1,6 @@
 package com.teckit.festival.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.teckit.festival.dto.ActivityPlaceDTO;
 import com.teckit.festival.dto.response.KakaoResponseDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -19,15 +18,9 @@ import java.util.List;
 public class AiActivityRequestDTO {
     @JsonProperty("restaurants")
     @Schema(description = "맛집 리스트")
-    private List<ActivityPlaceDTO> restaurants;
+    private List<KakaoResponseDTO> restaurants;
 
     @JsonProperty("hot_places")
     @Schema(description = "놀거리 리스트")
-    private List<ActivityPlaceDTO> hotPlaces;
-
-    public static AiActivityRequestDTO from() {
-        return AiActivityRequestDTO.builder()
-
-                .build();
-    }
+    private List<KakaoResponseDTO> hotPlaces;
 }
