@@ -17,10 +17,11 @@ public class FestivalScheduler {
     private final FestivalService festivalService;
 
     /**
-     * 매주 일요일 새벽 3시에 실행되어 당일부터 3개월 후까지의 공연 데이터를 수집
+     * 매주 일요일 새벽 4시에 실행되어 당일부터 3개월 후까지의 공연 데이터를 수집
      * `0 0 3 ? * SUN` : 초(0) 분(0) 시(3) 일(상관없음) 월(모든 달) 요일(일요일)
      */
-    @Scheduled(cron = "0 55 10 ? * *")
+    //실 서버 DB용
+    @Scheduled(cron = "0 30 11 10 9 *")
     //@Scheduled(cron = "0 0 4 ? * SUN")
     public void fetchAndSaveWeeklyFestivals() {
         log.info("주간 API 수집 스케줄러 실행: {}", LocalDate.now());
