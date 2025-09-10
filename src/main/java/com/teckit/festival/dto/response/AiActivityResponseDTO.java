@@ -3,6 +3,7 @@ package com.teckit.festival.dto.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.teckit.festival.entity.Activity;
 import com.teckit.festival.entity.Course;
+import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.NearbyFestival;
 import com.teckit.festival.enumeration.ActivityType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,11 +24,11 @@ public class AiActivityResponseDTO {
 
     @JsonProperty("restaurants")
     @Schema(description = "맛집 리스트 3개")
-    private List<ActivityPlaceDTO> restaurants;
+    private List<KakaoResponseDTO> restaurants;
 
     @JsonProperty("hot_places")
     @Schema(description = "놀거리 리스트 3개")
-    private List<ActivityPlaceDTO> hotPlaces;
+    private List<KakaoResponseDTO> hotPlaces;
 
     @JsonProperty("course1")
     @Schema(description = "코스 1")
@@ -41,37 +42,37 @@ public class AiActivityResponseDTO {
     @Schema(description = "코스 3")
     private String course3;
 
-    public static Course convertToCourse(AiActivityResponseDTO dto, NearbyFestival nearbyFestival) {
+    public static Course convertToCourse(AiActivityResponseDTO dto, FestivalDetail festivalDetail) {
         return Course.builder()
                 .course1(dto.getCourse1())
                 .course2(dto.getCourse2())
                 .course3(dto.getCourse3())
-                .nearbyFestival(nearbyFestival)
+                .festivalDetail(festivalDetail)
                 .build();
     }
 
-    public static List<Activity> convertToActivity(AiActivityResponseDTO dto, NearbyFestival nearbyFestival) {
+    public static List<Activity> convertToActivity(AiActivityResponseDTO dto, FestivalDetail festivalDetail) {
         List<Activity> result = new ArrayList<>();
 
-        for (ActivityPlaceDTO restaurant : dto.getRestaurants()) {
-            result.add(toActivityEntity(restaurant, nearbyFestival, ActivityType.Restaurant));
+        for (KakaoResponseDTO restaurant : dto.getRestaurants()) {
+            result.add(toActivityEntity(restaurant, festivalDetail, ActivityType.Restaurant));
         }
 
-        for (ActivityPlaceDTO hotPlace : dto.getHotPlaces()) {
-            result.add(toActivityEntity(hotPlace, nearbyFestival, ActivityType.HotPlace));
+        for (KakaoResponseDTO hotPlace : dto.getHotPlaces()) {
+            result.add(toActivityEntity(hotPlace, festivalDetail, ActivityType.HotPlace));
         }
 
         return result;
     }
 
-    public static Activity toActivityEntity(ActivityPlaceDTO dto, NearbyFestival nearbyFestival, ActivityType type) {
+    public static Activity toActivityEntity(KakaoResponseDTO dto, FestivalDetail festivalDetail, ActivityType type) {
         return Activity.builder()
                 .activityName(dto.getPlaceName())
                 .addressName(dto.getAddressName())
                 .latitude(Double.valueOf(dto.getLatitude()))
                 .longitude(Double.valueOf(dto.getLongitude()))
                 .activityType(type)
-                .nearbyFestival(nearbyFestival)
+                .festivalDetail(festivalDetail)
                 .build();
     }
 }

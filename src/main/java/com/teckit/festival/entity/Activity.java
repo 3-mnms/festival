@@ -33,7 +33,7 @@ public class Activity {
     @Column(length = 30)
     private ActivityType activityType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nearby_id", nullable = false)
-    private NearbyFestival nearbyFestival;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "festival_detail_id", nullable = false)
+    private FestivalDetail festivalDetail;
 }

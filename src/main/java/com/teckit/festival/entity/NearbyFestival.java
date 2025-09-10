@@ -47,12 +47,4 @@ public class NearbyFestival extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "fid", nullable = false)
     private FestivalDetail festivalDetail;
-
-    @Builder.Default
-    @OneToMany(mappedBy = "nearbyFestival", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Activity> activities = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "nearbyFestival", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Course> courses = new ArrayList<>();
 }

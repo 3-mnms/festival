@@ -11,6 +11,7 @@ import lombok.*;
 @Getter
 @Setter
 public class Course {
+    @Id
     @Column(name = "course_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long courseId;
@@ -24,7 +25,7 @@ public class Course {
     @Column(name = "course3", nullable = false)
     private String course3;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nearby_id", nullable = false)
-    private NearbyFestival nearbyFestival;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "festival_detail_id", nullable = false)
+    private FestivalDetail festivalDetail;
 }
