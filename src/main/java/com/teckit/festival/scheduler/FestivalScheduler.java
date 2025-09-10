@@ -26,7 +26,7 @@ public class FestivalScheduler {
         log.info("주간 API 수집 스케줄러 실행: {}", LocalDate.now());
 
         LocalDate today = LocalDate.now();
-        LocalDate threeMonthsLater = today.plusMonths(1); //test용 (나중에 3으로 변경)
+        LocalDate threeMonthsLater = today.plusMonths(3); //test용 (나중에 3으로 변경)
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         String stdate = today.format(formatter);
