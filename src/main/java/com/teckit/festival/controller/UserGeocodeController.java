@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -47,9 +48,10 @@ public class UserGeocodeController {
             @ApiResponse(responseCode = "200", description = "사용자 주소 근처 페스티벌 조회 완료",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
     })
-    public ResponseEntity<SuccessResponse<NearbyFestivalListDTO>> nearByFestivalList()
+    public ResponseEntity<SuccessResponse<NearbyFestivalListDTO>> nearByFestivalList(@AuthenticationPrincipal String principal)
     {
-        NearbyFestivalListDTO nearbyFestivalListDTO = userGeocodeService.findNearbyFestival();
+        Long userId = Long.parseLong(principal);
+        NearbyFestivalListDTO nearbyFestivalListDTO = userGeocodeService.getNearbyFestival(userId);
         return ApiResponseUtil.success(nearbyFestivalListDTO);
     }
 }

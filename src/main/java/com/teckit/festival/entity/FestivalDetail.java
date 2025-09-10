@@ -77,6 +77,10 @@ public class FestivalDetail {
     private FestivalReviewAnalyze festivalReviewAnalyze;
 
     @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<NearbyFestival> nearbyFestivals = new ArrayList<>();
+
+    @Builder.Default
     @ElementCollection
     private List<String> contentFile = new ArrayList<>();
 

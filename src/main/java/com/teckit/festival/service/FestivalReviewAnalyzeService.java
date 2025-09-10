@@ -1,7 +1,7 @@
 package com.teckit.festival.service;
 
-import com.teckit.festival.dto.request.AiRequestDTO;
-import com.teckit.festival.dto.response.AiResponseDTO;
+import com.teckit.festival.dto.request.AiReviewRequestDTO;
+import com.teckit.festival.dto.response.AiReviewResponseDTO;
 import com.teckit.festival.entity.FestivalDetail;
 import com.teckit.festival.entity.FestivalReviewAnalyze;
 import com.teckit.festival.exception.BusinessException;
@@ -32,25 +32,25 @@ public class FestivalReviewAnalyzeService {
                         .festivalDetail(festivalDetail)
                         .build());
 
-        AiResponseDTO responseDTO = callAiReviewAnalyze(reviewAnalyze, newReview);
+        AiReviewResponseDTO responseDTO = callAiReviewAnalyze(reviewAnalyze, newReview);
         reviewAnalyze.updateReviewAnalyze(responseDTO);
 
         festivalReviewAnalyzeRepository.save(reviewAnalyze);
     }
 
-    private AiResponseDTO callAiReviewAnalyze(FestivalReviewAnalyze reviewAnalyze, String newReview) {
+    private AiReviewResponseDTO callAiReviewAnalyze(FestivalReviewAnalyze reviewAnalyze, String newReview) {
 
         String summary = reviewAnalyze.getAnalyzeContent() != null ? reviewAnalyze.getAnalyzeContent() : "";
 
-        AiRequestDTO reviewRequest = AiRequestDTO.from(
+        AiReviewRequestDTO reviewRequest = AiReviewRequestDTO.from(
                 summary, newReview, reviewAnalyze.getPositiveCount(), reviewAnalyze.getNegativeCount(), reviewAnalyze.getNeutralCount()
         );
 
-        AiResponseDTO response = webClient.post()
+        AiReviewResponseDTO response = webClient.post()
                 .uri("/festival/review/analyze")
                 .bodyValue(reviewRequest)
                 .retrieve()
-                .bodyToMono(AiResponseDTO.class)
+                .bodyToMono(AiReviewResponseDTO.class)
                 .block();
 
         if (response == null) {
