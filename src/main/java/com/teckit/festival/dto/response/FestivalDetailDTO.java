@@ -87,8 +87,8 @@ public class FestivalDetailDTO {
 
     public FestivalDetail toEntity(int ticketPrice, int availableNOP) {
         // 기본값 보정
-        int safeTicketPick   = (this.ticketPick   <= 0) ? 1 : this.ticketPick;
-        int safeMaxPurchase  = (this.maxPurchase  <= 0) ? 1 : this.maxPurchase;
+        int safeTicketPick   = (this.ticketPick   <= 0) ? 2 : this.ticketPick;  // 기본 티켓 수령 방법 3(QR+배송)으로 변경
+        int safeMaxPurchase  = (this.maxPurchase  <= 0) ? 4 : this.maxPurchase; // 4개 까지
 
         int finalAvailableNOP = Math.max(0, availableNOP);
         int finalTicketPrice  = ticketPrice;
