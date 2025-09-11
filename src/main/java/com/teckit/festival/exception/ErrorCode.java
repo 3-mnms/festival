@@ -18,6 +18,7 @@ public enum ErrorCode {
     USER_GEOCODE_FAIL(HttpStatus.NOT_FOUND, "사용자 주소 정보를 확인할 수 없습니다."),
     DUPLICATE_FAVORITE(HttpStatus.CONFLICT, "이미 관심 상품에 등록된 공연입니다."),
     FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "관심 상품을 찾을 수 없습니다."),
+    NEARBY_FESTIVAL_NOT_FOUND(HttpStatus.NOT_FOUND, "근처 페스티벌을 찾을 수 없습니다."),
 
     DUPLICATE_FID(HttpStatus.CONFLICT, "이미 존재하는 공연 식별자(fid)입니다."),
     DELETION_CONFLICT(HttpStatus.CONFLICT, "연관 데이터로 인해 삭제할 수 없습니다."),

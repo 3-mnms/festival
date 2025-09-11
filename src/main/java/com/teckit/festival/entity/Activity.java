@@ -20,6 +20,9 @@ public class Activity {
     @Column(name = "activity_name", nullable = false)
     private String activityName;
 
+    @Column(name = "address_name", nullable = false)
+    private String addressName;
+
     @Column(name = "latitude",  columnDefinition = "DECIMAL(10,7)")
     private Double latitude; //위도
 
@@ -30,7 +33,7 @@ public class Activity {
     @Column(length = 30)
     private ActivityType activityType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nearby_id", nullable = false)
-    private NearbyFestival nearbyFestival;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "festival_detail_id", nullable = false)
+    private FestivalDetail festivalDetail;
 }

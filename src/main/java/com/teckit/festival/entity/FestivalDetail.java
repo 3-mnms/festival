@@ -81,6 +81,14 @@ public class FestivalDetail {
     private List<NearbyFestival> nearbyFestivals = new ArrayList<>();
 
     @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Activity> activities = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Course> courses = new ArrayList<>();
+
+    @Builder.Default
     @ElementCollection
     private List<String> contentFile = new ArrayList<>();
 
