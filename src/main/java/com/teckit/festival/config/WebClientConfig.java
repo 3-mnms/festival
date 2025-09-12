@@ -14,7 +14,7 @@ public class WebClientConfig {
     private String aiUrl;
 
     @Bean
-    public WebClient reviewAiWebClient() {
+    public WebClient aiWebClient() {
         return WebClient.builder()
                 .baseUrl(aiUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

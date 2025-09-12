@@ -1,9 +1,11 @@
 package com.teckit.festival.controller;
 
+import com.teckit.festival.controller.api.FestivalReviewApiSpecification;
 import com.teckit.festival.dto.request.FestivalReviewRequestDTO;
 import com.teckit.festival.dto.response.FestivalReviewResponseDTO;
 import com.teckit.festival.dto.response.FestivalReviewResultDTO;
 import com.teckit.festival.exception.global.SuccessResponse;
+import com.teckit.festival.repository.FestivalReviewAnalyzeRepository;
 import com.teckit.festival.security.AuthDetails;
 import com.teckit.festival.service.FestivalReviewService;
 import com.teckit.festival.util.ApiResponseUtil;
@@ -29,16 +31,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/festival/review")
 @RequiredArgsConstructor
 @Tag(name = "페스티벌 기대평 API", description = "기대평 조회, 생성, 수정, 삭제")
-public class FestivalReviewController {
+public class FestivalReviewController implements FestivalReviewApiSpecification {
     private final FestivalReviewService festivalReviewService;
 
     @GetMapping(value="/{fId}")
-    @Operation(summary = "페스티벌 별 전체 기대평 조회",
-            description = "페스티벌 별 전체 기대평 조회, pagination ex) GET /api/festival/review/{fId}")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "페스티벌 별 기대평 조회 완료",
-                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
-    })
     public ResponseEntity<SuccessResponse<FestivalReviewResultDTO>> getReviews(@PathVariable("fId") String fId, @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "0") int page)
     {
         int size = 10;
@@ -52,12 +48,6 @@ public class FestivalReviewController {
     }
 
     @GetMapping(value="/{fId}/myReview")
-    @Operation(summary = "페스티벌 별 본인 기대평 조회",
-            description = "페스티벌 별 본인 기대평 조회 ex) GET /api/festival/review/{fId}/myReview")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "페스티벌 별 본인 기대평 조회 완료",
-                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
-    })
     public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> getMyReview(@AuthenticationPrincipal String principal, @PathVariable("fId") String fId)
     {
         Long userId = Long.parseLong(principal);
@@ -66,12 +56,6 @@ public class FestivalReviewController {
     }
 
     @PostMapping(value="/{fId}")
-    @Operation(summary = "페스티벌 기대평 생성",
-            description = "페스티벌 기대평 생성, FestivalReviewDTO를 포함해야 합니다. ex) POST /api/festival/review/{festivalId}")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "페스티벌 기대평 생성 완료",
-                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
-    })
     public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> createReview(Authentication authentication, @Valid @RequestBody FestivalReviewRequestDTO festivalReviewRequestDTO, @PathVariable("fId") String fId){
         Long userId = Long.parseLong(authentication.getName());
 
@@ -86,12 +70,6 @@ public class FestivalReviewController {
     }
 
     @PatchMapping(value="/{fId}/{rId}")
-    @Operation(summary = "페스티벌 기대평 수정",
-            description = "페스티벌 기대평 수정, FestivalReviewDTO를 포함해야 합니다. ex) PATCH /api/festival/review/{fId}/{rId}")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "페스티벌 기대평 수정 완료",
-                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
-    })
     public ResponseEntity<SuccessResponse<FestivalReviewResponseDTO>> updateReview(Authentication authentication, @Valid @RequestBody FestivalReviewRequestDTO festivalReviewRequestDTO, @PathVariable("fId") String fId, @PathVariable("rId") Long rId){
         Long userId = Long.parseLong(authentication.getName());
 
@@ -106,12 +84,6 @@ public class FestivalReviewController {
     }
 
     @DeleteMapping(value="/{fId}/{rId}")
-    @Operation(summary = "페스티벌 기대평 삭제",
-            description = "페스티벌 기대평 삭제, ex) PATCH /api/festival/review/{fId}/{rId}")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "페스티벌 기대평 삭제 완료",
-                    content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
-    })
     public ResponseEntity<SuccessResponse<Void>> deleteReview(Authentication authentication, @PathVariable("fId") String fId, @PathVariable("rId") Long rId){
         Long userId = Long.parseLong(authentication.getName());
         String role = authentication.getAuthorities().iterator().next().getAuthority();
