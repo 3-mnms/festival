@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -38,30 +37,8 @@ public class UserGeocodeService {
         if(userGeocodeInfoDTO.getLatitude() == null || userGeocodeInfoDTO.getLongitude() == null)
             throw new BusinessException(ErrorCode.USER_GEOCODE_FAIL);
 
-        List<NearbyFestival> nearbyList = nearbyFestivalRepository.findByUserIdOrderByDistanceAsc(userId);
-        if(nearbyList.isEmpty()){
-            return findNewNearby(userGeocodeInfoDTO);
-        }
-        else{
-            LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-            LocalDateTime updatedAt = nearbyList.get(0).getUpdatedAt();
-
-            if (updatedAt.isBefore(threeDaysAgo)) {
-                nearbyFestivalRepository.deleteByUserId(userId);
-                return findNewNearby(userGeocodeInfoDTO);
-            }
-            else{
-                List<NearbyFestivalDTO> nearbyFestivalDTOS = nearbyList.stream()
-                        .map(NearbyFestivalDTO::fromEntity)
-                        .toList();
-
-                NearbyFestivalListDTO nearbyFestivalListDTO = new NearbyFestivalListDTO().builder().build();
-                nearbyFestivalListDTO.setUserGeocodeInfo(userGeocodeInfoDTO);
-                nearbyFestivalListDTO.setFestivalList(nearbyFestivalDTOS);
-
-                return nearbyFestivalListDTO;
-            }
-        }
+        nearbyFestivalRepository.deleteByUserId(userId);
+        return findNewNearby(userGeocodeInfoDTO);
     }
 
     @Transactional

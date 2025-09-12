@@ -44,23 +44,6 @@ public class NearbyFestivalDTO {
     private String poster;
 
     @Schema(hidden = true)
-    public static NearbyFestivalDTO fromEntity(NearbyFestival nearbyFestival) {
-        FestivalDetail festivalDetail = nearbyFestival.getFestivalDetail();
-
-        return NearbyFestivalDTO.builder()
-                .festivalDetailId(festivalDetail.getId())
-                .name(festivalDetail.getFname())
-                .cast(festivalDetail.getFcast())
-                .address(festivalDetail.getFaddress())
-                .latitude(nearbyFestival.getLatitude())
-                .longitude(nearbyFestival.getLongitude())
-                .finishDate(festivalDetail.getFdto())
-                .distance(nearbyFestival.getDistance())
-                .poster(festivalDetail.getPosterFile())
-                .build();
-    }
-
-    @Schema(hidden = true)
     public NearbyFestival toEntity(Long userId, FestivalDetail festivalDetail) {
 
         return NearbyFestival.builder()
