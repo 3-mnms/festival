@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/festival/review/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/festival/chat").permitAll()
 
                         .requestMatchers(HttpMethod.DELETE, "/api/festival/manage/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/festival/manage/**").authenticated()
