@@ -89,7 +89,7 @@ public class FestivalReviewService {
             throw new BusinessException(ErrorCode.REVIEW_NOT_ALLOWED);
 
         festivalReview.setReviewContent(festivalReviewRequestDTO.getReviewContent());
-        festivalReview.setReviewContent(userName);
+        festivalReview.setUserName(userName);
         festivalReviewRepository.save(festivalReview);
 
         return FestivalReviewResponseDTO.fromEntity(festivalReview);
