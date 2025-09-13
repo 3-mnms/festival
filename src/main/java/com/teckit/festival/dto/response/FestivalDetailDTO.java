@@ -87,7 +87,7 @@ public class FestivalDetailDTO {
 
     public FestivalDetail toEntity(int ticketPrice, int availableNOP) {
         // 기본값 보정
-        int safeTicketPick   = (this.ticketPick   <= 0) ? 2 : this.ticketPick;  // 기본 티켓 수령 방법 3(QR+배송)으로 변경
+        int safeTicketPick   = (this.ticketPick   <= 0) ? 1 : this.ticketPick;  // 기본 티켓 수령 방법 1(QR+배송)으로 변경
         int safeMaxPurchase  = (this.maxPurchase  <= 0) ? 4 : this.maxPurchase; // 4개 까지
 
         int finalAvailableNOP = Math.max(0, availableNOP);
@@ -110,7 +110,7 @@ public class FestivalDetailDTO {
 
         return FestivalDetail.builder()
                 .id(id)
-                .userId(this.userId != null ? this.userId : 0)
+                .userId(this.userId != null ? this.userId : 0) // 외부 API로 불러오는 공연 소유자 기본 0
                 .fcltyid(fcltyid)
                 .fname(fname)
                 .fdfrom(DateUtil.parseDate(this.fdfrom))

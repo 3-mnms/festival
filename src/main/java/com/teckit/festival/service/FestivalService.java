@@ -252,7 +252,7 @@ public class FestivalService {
                 .queryParam("service", festivalApiKey)
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
-                .queryParam("cpage", "2")
+                .queryParam("cpage", "3")
                 .queryParam("rows", "100")
                 .toUriString();
 
@@ -350,7 +350,7 @@ public class FestivalService {
     }
 
     public Page<FestivalListResponseDTO> getFestivalsByCategory(String genrenm, Pageable pageable) {
-        Page<Festival> festivals = festivalRepository.findByGenrenm(genrenm, pageable);
+        Page<Festival> festivals = festivalRepository.findLiveFestivalsByGenrenm(genrenm, pageable);
         return festivals.map(FestivalListResponseDTO::fromEntity);
     }
 }
