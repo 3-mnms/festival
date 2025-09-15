@@ -8,6 +8,8 @@ import com.teckit.festival.util.ApiResponseUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -81,17 +83,23 @@ public class FestivalManageController {
         return ApiResponseUtil.success(null, "🗑️ 공연 삭제 성공");
     }
 
-    @Operation(summary = "공연 목록 조회 (주최자/운영자)")
+    @Operation(
+            summary = "공연 목록 조회 (주최자/운영자)",
+            description = "예시: `/manage?page=0&size=5` (size 미지정 시 전체 조회)"
+    )
     @PreAuthorize("hasAnyRole('HOST','ADMIN')")
     @GetMapping("/manage")
     public ResponseEntity<SuccessResponse<List<FestivalRegisterResponseDTO>>> getMyFestivals(
-            Authentication authentication
+            Authentication authentication,
+            @ParameterObject Pageable pageable
     ) {
         Long userId = requireUserId(authentication);
         boolean admin = isAdmin(authentication);
-        List<FestivalRegisterResponseDTO> responseList = manageService.getFestivalsByRole(userId, admin);
+
+        List<FestivalRegisterResponseDTO> responseList = manageService.getFestivalsByRole(userId, admin, pageable);
         return ApiResponseUtil.success(responseList, "📄 공연 목록 조회 성공");
     }
+
 
     @Operation(summary = "공연 상세 조회")
     @PreAuthorize("hasAnyRole('HOST','ADMIN')")

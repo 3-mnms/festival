@@ -24,6 +24,9 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
     // 특정 사용자가 등록한 공연 목록을 조회
     List<Festival> findByFestivalDetail_UserId(Long userId);
 
+    // 페이징 처리 추가
+    Page<Festival> findByFestivalDetail_UserId(Long userId, Pageable pageable);
+
     // 모든 공연 목록을 DTO 형태로 페이징하여 조회
     @Query(
             value = """
