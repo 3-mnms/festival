@@ -15,6 +15,7 @@ import com.teckit.festival.repository.FestivalScheduleRepository;
 import com.teckit.festival.util.DateUtil;
 import com.teckit.festival.util.FestivalIdGenerator;
 import com.teckit.festival.util.FestivalStatusUtil;
+import com.teckit.festival.util.FestivalValidatorUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,14 +23,10 @@ import org.hibernate.Hibernate;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,12 +38,9 @@ public class FestivalManageService {
     private final FestivalScheduleRepository scheduleRepository;
     private final FestivalKafkaProducer kafkaProducer;
     private final FestivalIdGenerator festivalIdGenerator;
+    private final S3Service s3Service; // S3 업로드/삭제 전담
 
-    private final S3Client s3Client;   // 삭제용
-    private final String s3BucketName; // 삭제용
-    private final S3Service s3Service; // 업로드용 Presigned URL 서비스
-
-    // 공연 등록 (파일 S3 업로드 후 URL DB 저장)
+    // 공연 등록
     @Transactional
     public FestivalRegisterResponseDTO registerFestivalWithDetails(
             FestivalRegisterDTO request,
@@ -59,6 +53,12 @@ public class FestivalManageService {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "공연 상세 정보가 누락되었습니다.");
         }
 
+        // 날짜 파싱 & 검증
+        LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
+        LocalDate fdto = DateUtil.parseDate(request.getFdto());
+        FestivalValidatorUtil.validateDates(fdfrom, fdto);
+        FestivalValidatorUtil.validateSchedules(request.getSchedules(), fdfrom, fdto);
+
         // 1. S3 업로드
         String posterUrl = (posterFile != null) ? s3Service.uploadFile(posterFile) : null;
         List<String> contentUrls = (contentFiles != null && !contentFiles.isEmpty())
@@ -69,7 +69,7 @@ public class FestivalManageService {
         if (detailReq.getContentFile() != null) {
             mergedContentFiles.addAll(detailReq.getContentFile());
         }
-        if (contentUrls != null && !contentUrls.isEmpty()) {
+        if (!contentUrls.isEmpty()) {
             mergedContentFiles.addAll(contentUrls);
         }
 
@@ -79,8 +79,6 @@ public class FestivalManageService {
         int safeMaxPurchase = Math.max(1, detailReq.getMaxPurchase());
         int safeAvailable = Math.max(0, detailReq.getAvailableNOP());
 
-        LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
-        LocalDate fdto = DateUtil.parseDate(request.getFdto());
         String computedState = FestivalStatusUtil.calcState(fdfrom, fdto);
 
         // 3. FestivalDetail 생성
@@ -142,7 +140,7 @@ public class FestivalManageService {
         return FestivalRegisterResponseDTO.fromEntity(festival, detail, schedules);
     }
 
-    // 공연 수정 (파일 교체 시 S3 업로드/삭제)
+    // 공연 수정
     @Transactional
     public FestivalRegisterResponseDTO updateFestival(
             String fid,
@@ -167,29 +165,24 @@ public class FestivalManageService {
 
         // 포스터 교체
         if (posterFile != null) {
-            if (detail.getPosterFile() != null) {
-                deleteFileFromS3(detail.getPosterFile()); // 기존 삭제
-            }
-            String newPosterUrl = s3Service.uploadFile(posterFile); // 새 업로드
-            detail.setPosterFile(newPosterUrl);
-            festival.setPosterFile(newPosterUrl);
+            s3Service.replaceFile(detail::getPosterFile, detail::setPosterFile, posterFile);
+            festival.setPosterFile(detail.getPosterFile());
         }
 
         // 콘텐츠 교체
         if (contentFiles != null && !contentFiles.isEmpty()) {
-            if (detail.getContentFile() != null) {
-                detail.getContentFile().forEach(this::deleteFileFromS3);
-            }
-            List<String> newContentUrls = contentFiles.stream()
-                    .map(s3Service::uploadFile)
-                    .toList();
-            detail.setContentFile(newContentUrls);
+            s3Service.replaceFiles(detail.getContentFile(), contentFiles, detail::setContentFile);
         }
 
+        // 날짜 파싱 & 검증
         LocalDate fdfrom = DateUtil.parseDate(request.getFdfrom());
         LocalDate fdto = DateUtil.parseDate(request.getFdto());
+        FestivalValidatorUtil.validateDates(fdfrom, fdto);
+        FestivalValidatorUtil.validateSchedules(request.getSchedules(), fdfrom, fdto);
+
         String computedState = FestivalStatusUtil.calcState(fdfrom, fdto);
 
+        // 상세정보 갱신
         detail.setFname(request.getFname());
         detail.setFdfrom(fdfrom);
         detail.setFdto(fdto);
@@ -217,10 +210,11 @@ public class FestivalManageService {
                         .dayOfWeek(FestivalScheduleDay.valueOf(s.getDayOfWeek().toUpperCase()))
                         .time(s.getTime())
                         .build())
-                .collect(Collectors.toList()));
+                .toList());
         detail.setSchedules(schedules);
         scheduleRepository.saveAll(schedules);
 
+        // Festival 엔티티 갱신
         festival.setFname(request.getFname());
         festival.setFdfrom(fdfrom);
         festival.setFdto(fdto);
@@ -238,9 +232,7 @@ public class FestivalManageService {
         return FestivalRegisterResponseDTO.fromEntity(festival, detail, schedules);
     }
 
-    /**
-     * 공연 삭제 (DB와 S3 파일 모두 삭제)
-     */
+    // 공연 삭제
     @Transactional
     public void deleteFestivalByHost(String fid, Long userId, boolean isAdmin) {
         Festival festival = festivalRepository.findByFestivalDetail_Id(fid)
@@ -252,12 +244,10 @@ public class FestivalManageService {
 
         FestivalDetail detail = festival.getFestivalDetail();
 
-        // S3에서 포스터 및 콘텐츠 파일 삭제
-        if (detail.getPosterFile() != null) {
-            deleteFileFromS3(detail.getPosterFile());
-        }
+        // S3 파일 삭제
+        s3Service.deleteFile(detail.getPosterFile());
         if (detail.getContentFile() != null) {
-            detail.getContentFile().forEach(this::deleteFileFromS3);
+            detail.getContentFile().forEach(s3Service::deleteFile);
         }
 
         kafkaProducer.sendDeleted(fid);
@@ -266,52 +256,12 @@ public class FestivalManageService {
         detailRepository.deleteById(fid);
     }
 
-    /**
-     * S3 객체 삭제 헬퍼 메서드
-     */
-    private void deleteFileFromS3(String fileUrl) {
-        try {
-            if (fileUrl == null || fileUrl.isBlank()) {
-                return;
-            }
-            String key = extractS3KeyFromUrl(fileUrl);
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(s3BucketName)
-                    .key(key)
-                    .build();
-            s3Client.deleteObject(deleteObjectRequest);
-            log.info("S3 object deleted successfully: {}", fileUrl);
-        } catch (Exception e) {
-            log.error("Failed to delete S3 object: {}", fileUrl, e);
-        }
-    }
-
-    /**
-     * S3 URL에서 객체 키(Key)를 추출하는 헬퍼 메서드
-     */
-    private String extractS3KeyFromUrl(String fileUrl) {
-        try {
-            java.net.URL url = new java.net.URL(fileUrl);
-            return url.getPath().substring(1);
-        } catch (java.net.MalformedURLException e) {
-            throw new IllegalArgumentException("Invalid URL: " + fileUrl, e);
-        }
-    }
-
     // 공연 목록 조회
     public List<FestivalRegisterResponseDTO> getFestivalsByRole(Long userId, boolean isAdmin, Pageable pageable) {
-        List<Festival> festivals;
-
-        // pageable.isPaged() : Page 요청이면 true
-        if (isAdmin) {
-            festivals = pageable.isPaged()
-                    ? festivalRepository.findAll(pageable).getContent()
-                    : festivalRepository.findAll();
-        } else {
-            festivals = pageable.isPaged()
-                    ? festivalRepository.findByFestivalDetail_UserId(userId, pageable).getContent()
-                    : festivalRepository.findByFestivalDetail_UserId(userId);
-        }
+        List<Festival> festivals = isAdmin
+                ? (pageable.isPaged() ? festivalRepository.findAll(pageable).getContent() : festivalRepository.findAll())
+                : (pageable.isPaged() ? festivalRepository.findByFestivalDetail_UserId(userId, pageable).getContent()
+                : festivalRepository.findByFestivalDetail_UserId(userId));
 
         return festivals.stream()
                 .map(festival -> {
@@ -325,7 +275,7 @@ public class FestivalManageService {
                 .toList();
     }
 
-    // 공연 상세 조회
+    //공연 상세 조회
     @Transactional
     public FestivalRegisterResponseDTO getFestivalDetail(String fid, Long userId, boolean admin) {
         FestivalDetail detail = detailRepository.findById(fid)
@@ -338,5 +288,4 @@ public class FestivalManageService {
         Hibernate.initialize(detail.getSchedules());
         return FestivalRegisterResponseDTO.fromEntity(detail.getFestival(), detail, detail.getSchedules());
     }
-
 }

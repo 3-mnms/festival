@@ -8,6 +8,8 @@ public enum ErrorCode {
 
     // 4xx (클라이언트 오류)
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
+    INVALID_FESTIVAL_DATE(HttpStatus.BAD_REQUEST, "공연 날짜가 올바르지 않습니다."),
+    INVALID_SCHEDULE_DAY(HttpStatus.BAD_REQUEST, "공연 기간에 포함되지 않는 요일입니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "요청 값이 유효하지 않습니다."),
     NO_AUTHORITY(HttpStatus.FORBIDDEN, "권한이 없습니다."),
     NOT_OWNER(HttpStatus.FORBIDDEN, "본인이 등록한 공연만 처리할 수 있습니다."),
