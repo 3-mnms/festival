@@ -34,8 +34,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,   "/api/festival/review/**").authenticated()
                         .requestMatchers(HttpMethod.PATCH,  "/api/festival/review/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/festival/review/**").authenticated()
-                        .anyRequest().authenticated()
-                        //.anyRequest().permitAll()
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(headerAuthFilter, AuthorizationFilter.class)
                 .build();
