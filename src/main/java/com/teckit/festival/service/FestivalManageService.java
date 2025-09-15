@@ -19,6 +19,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -298,10 +299,19 @@ public class FestivalManageService {
     }
 
     // 공연 목록 조회
-    public List<FestivalRegisterResponseDTO> getFestivalsByRole(Long userId, boolean isAdmin) {
-        List<Festival> festivals = isAdmin
-                ? festivalRepository.findAll()
-                : festivalRepository.findByFestivalDetail_UserId(userId);
+    public List<FestivalRegisterResponseDTO> getFestivalsByRole(Long userId, boolean isAdmin, Pageable pageable) {
+        List<Festival> festivals;
+
+        // pageable.isPaged() : Page 요청이면 true
+        if (isAdmin) {
+            festivals = pageable.isPaged()
+                    ? festivalRepository.findAll(pageable).getContent()
+                    : festivalRepository.findAll();
+        } else {
+            festivals = pageable.isPaged()
+                    ? festivalRepository.findByFestivalDetail_UserId(userId, pageable).getContent()
+                    : festivalRepository.findByFestivalDetail_UserId(userId);
+        }
 
         return festivals.stream()
                 .map(festival -> {
