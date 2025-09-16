@@ -62,10 +62,7 @@ public class ActivityService {
                 activityRepository.saveAll(activityList);
                 courseRepository.save(courseAI);
 
-                List<ActivityDTO> aiRestaurantDTO = KakaoResponseDTO.toActivityListDto(responseDTO.getRestaurants(), ActivityType.Restaurant);
-                List<ActivityDTO> aiHotPlaceDTO = KakaoResponseDTO.toActivityListDto(responseDTO.getHotPlaces(), ActivityType.HotPlace);
-
-                RecommendDTO resultDTO = RecommendDTO.toDto(festivalDetail.getId(), aiRestaurantDTO, aiHotPlaceDTO, CourseDTO.toDto(courseAI));
+                RecommendDTO resultDTO = RecommendDTO.toDto(festivalDetail.getId(), responseDTO.getRestaurants(), responseDTO.getHotPlaces(), CourseDTO.toDto(courseAI));
                 resultDtoList.add(resultDTO);
             }
             else {
