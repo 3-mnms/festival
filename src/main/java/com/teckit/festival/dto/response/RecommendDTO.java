@@ -24,10 +24,10 @@ public class RecommendDTO {
     @Schema(description = "페스티벌 detailId")
     private String festivalDetailId;
 
-    @Schema(description = "맛집 리스트 3개")
+    @Schema(description = "맛집 리스트 5개")
     private List<ActivityDTO> restaurants;
 
-    @Schema(description = "놀거리 리스트 3개")
+    @Schema(description = "놀거리 리스트 5개")
     private List<ActivityDTO> hotPlaces;
 
     @Schema(description = "코스")
