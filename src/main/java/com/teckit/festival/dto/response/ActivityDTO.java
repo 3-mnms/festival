@@ -1,5 +1,6 @@
 package com.teckit.festival.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.teckit.festival.entity.Activity;
 import com.teckit.festival.enumeration.ActivityType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,18 +18,23 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ActivityDTO {
+    @JsonProperty("activity_name")
     @Schema(description = "장소명")
     private String activityName;
 
+    @JsonProperty("address_name")
     @Schema(description = "장소 주소")
     private String addressName;
 
+    @JsonProperty("latitude")
     @Schema(description = "장소 위도")
     private Double latitude;
 
+    @JsonProperty("longitude")
     @Schema(description = "장소 경도")
     private Double longitude;
 
+    @JsonProperty("activity_type")
     @Schema(description = "장소 타입 (Restaurant or HotPlace)")
     private ActivityType activityType;
 
