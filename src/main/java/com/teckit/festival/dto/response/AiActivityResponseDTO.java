@@ -21,11 +21,11 @@ import java.util.List;
 public class AiActivityResponseDTO {
 
     @JsonProperty("restaurants")
-    @Schema(description = "맛집 리스트 3개")
+    @Schema(description = "맛집 리스트 5개")
     private List<ActivityDTO> restaurants;
 
     @JsonProperty("hot_places")
-    @Schema(description = "놀거리 리스트 3개")
+    @Schema(description = "놀거리 리스트 5개")
     private List<ActivityDTO> hotPlaces;
 
     @JsonProperty("course1")
@@ -40,11 +40,21 @@ public class AiActivityResponseDTO {
     @Schema(description = "코스 3")
     private String course3;
 
+    @JsonProperty("course4")
+    @Schema(description = "코스 4")
+    private String course4;
+
+    @JsonProperty("course5")
+    @Schema(description = "코스 5")
+    private String course5;
+
     public static Course convertToCourse(AiActivityResponseDTO dto, FestivalDetail festivalDetail) {
         return Course.builder()
                 .course1(dto.getCourse1())
                 .course2(dto.getCourse2())
                 .course3(dto.getCourse3())
+                .course4(dto.getCourse4())
+                .course5(dto.getCourse5())
                 .festivalDetail(festivalDetail)
                 .build();
     }
