@@ -272,26 +272,23 @@ public class FestivalService {
 
     public List<FestivalListResponseDTO> searchByGenreAndKeyword(String genre, String keyword) {
         List<Festival> result = festivalRepository.findByGenrenmAndFnameContaining(genre, keyword);
-        if (result.isEmpty()) {
-            throw new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND, "검색 결과가 없습니다.");
-        }
-        return result.stream().map(FestivalListResponseDTO::fromEntity).toList();
+        return result.stream()
+                .map(FestivalListResponseDTO::fromEntity)
+                .toList();
     }
 
     public List<FestivalListResponseDTO> searchByGenre(String genre) {
         List<Festival> result = festivalRepository.findByGenrenm(genre);
-        if (result.isEmpty()) {
-            throw new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND, "해당 장르의 공연이 없습니다.");
-        }
-        return result.stream().map(FestivalListResponseDTO::fromEntity).toList();
+        return result.stream()
+                .map(FestivalListResponseDTO::fromEntity)
+                .toList();
     }
 
     public List<FestivalListResponseDTO> searchByKeyword(String keyword) {
         List<Festival> result = festivalRepository.findByFnameContaining(keyword);
-        if (result.isEmpty()) {
-            throw new BusinessException(ErrorCode.FESTIVAL_NOT_FOUND, "해당 키워드의 공연이 없습니다.");
-        }
-        return result.stream().map(FestivalListResponseDTO::fromEntity).toList();
+        return result.stream()
+                .map(FestivalListResponseDTO::fromEntity)
+                .toList();
     }
 
     /* ===================== 기타 ===================== */
