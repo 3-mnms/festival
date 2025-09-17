@@ -48,10 +48,10 @@ public class ActivityService {
             Course course = courseRepository.findByFestivalDetail(festivalDetail);
 
             if(restaurantList.isEmpty() || hotPlaceList.isEmpty() || course == null) {
-                List<KakaoResponseDTO> restaurants = kakaoSearchService.activitySearch("FD6", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3000, 15)
+                List<KakaoResponseDTO> restaurants = kakaoSearchService.activitySearch("FD6", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3000, 10)
                         .orElse(Collections.emptyList());
 
-                List<KakaoResponseDTO> hotPlaces = kakaoSearchService.activitySearch("AT4", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3000, 15)
+                List<KakaoResponseDTO> hotPlaces = kakaoSearchService.activitySearch("AT4", nearbyFestival.getLongitude(), nearbyFestival.getLatitude(), 3000, 10)
                         .orElse(Collections.emptyList());
 
                 AiActivityResponseDTO responseDTO = callAiActivity(restaurants, hotPlaces); //ai 호출
