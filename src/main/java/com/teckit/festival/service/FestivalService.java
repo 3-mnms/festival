@@ -252,7 +252,7 @@ public class FestivalService {
                 .queryParam("service", festivalApiKey)
                 .queryParam("stdate", stdate)
                 .queryParam("eddate", eddate)
-                .queryParam("cpage", "1")
+                .queryParam("cpage", "3")
                 .queryParam("rows", "100")
                 .toUriString();
 
