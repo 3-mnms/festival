@@ -30,6 +30,9 @@ public class FestivalDetail {
     @JsonBackReference
     private Festival festival;
 
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FestivalFavorite> favorites = new ArrayList<>();
+
     @Column(nullable = false)
     private Long userId;
 
