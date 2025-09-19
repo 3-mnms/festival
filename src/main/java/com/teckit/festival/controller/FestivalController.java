@@ -169,7 +169,7 @@ public class FestivalController {
     public ResponseEntity<SuccessResponse<Integer>> run() {
 
         int a=0;
-        for(int i=0; i < 100; i++){
+        for(int i=0; i < 10000; i++){
            a++;
         }
         return ApiResponseUtil.success(0," success");
