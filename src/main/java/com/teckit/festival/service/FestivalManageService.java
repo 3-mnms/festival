@@ -20,6 +20,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -257,22 +258,27 @@ public class FestivalManageService {
     }
 
     // 공연 목록 조회
-    public List<FestivalRegisterResponseDTO> getFestivalsByRole(Long userId, boolean isAdmin, Pageable pageable) {
-        List<Festival> festivals = isAdmin
-                ? (pageable.isPaged() ? festivalRepository.findAll(pageable).getContent() : festivalRepository.findAll())
-                : (pageable.isPaged() ? festivalRepository.findByFestivalDetail_UserId(userId, pageable).getContent()
-                : festivalRepository.findByFestivalDetail_UserId(userId));
+    public Page<FestivalRegisterResponseDTO> getFestivalsByRole(Long userId, boolean isAdmin, String keyword, Pageable pageable) {
+        Page<Festival> festivals;
 
-        return festivals.stream()
-                .map(festival -> {
-                    Hibernate.initialize(festival.getFestivalDetail().getSchedules());
-                    return FestivalRegisterResponseDTO.fromEntity(
-                            festival,
-                            festival.getFestivalDetail(),
-                            festival.getFestivalDetail().getSchedules()
-                    );
-                })
-                .toList();
+        if (isAdmin) {
+            festivals = (keyword != null && !keyword.isBlank())
+                    ? festivalRepository.findByFestivalDetail_FnameContaining(keyword, pageable)
+                    : festivalRepository.findAll(pageable);
+        } else {
+            festivals = (keyword != null && !keyword.isBlank())
+                    ? festivalRepository.findByFestivalDetail_UserIdAndFestivalDetail_FnameContaining(userId, keyword, pageable)
+                    : festivalRepository.findByFestivalDetail_UserId(userId, pageable);
+        }
+
+        return festivals.map(festival -> {
+            Hibernate.initialize(festival.getFestivalDetail().getSchedules());
+            return FestivalRegisterResponseDTO.fromEntity(
+                    festival,
+                    festival.getFestivalDetail(),
+                    festival.getFestivalDetail().getSchedules()
+            );
+        });
     }
 
     //공연 상세 조회
