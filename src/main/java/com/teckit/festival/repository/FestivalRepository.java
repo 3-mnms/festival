@@ -64,4 +64,12 @@ public interface FestivalRepository extends JpaRepository<Festival, Long> {
             "AND (fd.story IS NOT NULL OR fd.contentFile IS NOT EMPTY) " +
             "ORDER BY fd.views DESC")
     Page<Festival> findLiveFestivalsByGenrenm(String genrenm, Pageable pageable);
+
+    Page<Festival> findByFestivalDetail_UserIdAndFestivalDetail_FnameContaining(
+            Long userId,
+            String keyword,
+            Pageable pageable
+    );
+
+    Page<Festival> findByFestivalDetail_FnameContaining(String keyword, Pageable pageable);
 }
