@@ -164,4 +164,15 @@ public class FestivalController {
         int success = festivalGeocodeService.geocodeBatch(size);
         return ApiResponseUtil.success(success, "성공");
     }
+
+    @GetMapping("/test")
+    public ResponseEntity<SuccessResponse<Integer>> run() {
+
+        int a=0;
+        for(int i=0; i < 100; i++){
+           a++;
+        }
+        return ApiResponseUtil.success(0," success");
+    }
+
 }
