@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
@@ -165,16 +166,35 @@ public class FestivalController {
         return ApiResponseUtil.success(success, "성공");
     }
 
+    // 삭제 필수
     @GetMapping("/test")
     public ResponseEntity<SuccessResponse<Integer>> run() {
 
-        int a=0;
-        int b=0;
-        for(int i=0; i < 100000; i++){
-           a++;
-           b++;
+        long startTime = System.currentTimeMillis();
+        long result = fibonacci(45);
+        long endTime = System.currentTimeMillis();
+        System.out.println("계산 시간: " + (endTime - startTime) + "ms, 결과: " + result);
+        return ApiResponseUtil.success(0);
+    }
+
+    private long fibonacci(int n) {
+        if (n <= 1) {
+            return n;
         }
-        return ApiResponseUtil.success(0," success");
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+    // 삭제 필수
+    @GetMapping("/test2")
+    public ResponseEntity test(){
+
+        int a = 0;
+        int b = 0;
+
+        for(int i=0; i< 100000; i++){
+            a++;
+            b++;
+        }
+        return new ResponseEntity(HttpStatus.OK);
     }
 
 }
