@@ -1,87 +1,172 @@
 package com.teckit.festival.dto.response;
 
-import com.teckit.festival.entity.Festival;
+import com.teckit.festival.dto.FestivalKafkaDTO;
 import com.teckit.festival.entity.FestivalDetail;
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.teckit.festival.util.DateUtil;
+import jakarta.persistence.Column;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.xml.bind.annotation.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Getter
 @Builder
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @XmlAccessorType(XmlAccessType.FIELD)
-@Getter
 public class FestivalDetailDTO {
-    private String mt20id; // 공연 ID
-    private String mt10id; // 공연시설 ID
-    private String prfnm; // 공연명
-    private String prfpdfrom; // 공연 시작일
-    private String prfpdto; // 공연 종료일
-    private String fcltynm; // 공연시설명
-    private String prfcast; // 출연진
-    private String prfcrew; // 제작진
-    private String prfruntime; // 런타임
-    private String prfage; // 관람 연령
-    private String entrpsnmP; // 제작사
-    private String entrpsnmA; // 기획사
-    private String entrpsnmH; // 주최
-    private String entrpsnmS; // 주관
-    private String pcseguidance; // 티켓 가격
-    private String poster; // 포스터 이미지
-    private String sty; // 줄거리
-    private String genrenm; // 공연 장르
-    private String prfstate; // 공연 상태
-    private String openrun; // 오픈런 여부
-    private String visit; // 내한 여부
-    private String child; // 아동극 여부
-    private String daehakro; // 대학로 여부
-    private String isFestival; // 축제 여부
-    private String musicallicense; // 뮤지컬 라이선스 여부
-    private String musicalcreate; // 뮤지컬 창작 여부
-    private String updatedate; // 최종 수정일
 
+    @XmlElement(name = "mt20id")
+    private String id;
+
+    @XmlElement(name = "mt10id")
+    private String fcltyid;
+
+    @XmlElement(name = "prfnm")
+    private String fname;
+
+    @XmlElement(name = "prfpdfrom")
+    private String fdfrom;
+
+    @XmlElement(name = "prfpdto")
+    private String fdto;
+
+    @XmlElement(name = "fcltynm")
+    private String fcltynm;
+
+    @XmlElement(name = "prfcast")
+    private String fcast;
+
+    @XmlElement(name = "prfage")
+    private String prfage;
+
+    @XmlElement(name = "poster")
+    private String posterFile;
+
+    @XmlElement(name = "sty")
+    private String story;
+
+    @XmlElement(name = "genrenm")
+    private String genrenm;
+
+    @XmlElement(name = "prfstate")
+    private String fstate;
+
+    @XmlElement(name = "updatedate")
+    private String updatedate;
+
+    @XmlElement(name = "entrpsnmH")
+    private String entrpsnmH;
+
+    @XmlElement(name = "prfruntime")
+    private String runningTime;
+
+    @Builder.Default
     @XmlElementWrapper(name = "styurls")
     @XmlElement(name = "styurl")
-    private List<String> styurls;
+    private List<String> contentFile = new ArrayList<>();
 
+    // 내부 전용 필드
+    private Long userId;
+    private String faddress;
+    @Min(1) @Max(3)
+    private int ticketPick;
+    @Min(1) @Max(4)
+    private int maxPurchase;
+    private int availableNOP;
+    private int ticketPrice;
 
-    public FestivalDetail toEntity(Festival festival) {
+    public FestivalDetail toEntity(int ticketPrice, int availableNOP) {
+        // 기본값 보정
+        int safeTicketPick   = (this.ticketPick   <= 0) ? 1 : this.ticketPick;  // 기본 티켓 수령 방법 1(QR+배송)으로 변경
+        int safeMaxPurchase  = (this.maxPurchase  <= 0) ? 4 : this.maxPurchase; // 4개 까지
+
+        int finalAvailableNOP = Math.max(0, availableNOP);
+        int finalTicketPrice  = ticketPrice;
+
+        LocalDateTime updatedDateTime = null;
+        if (this.updatedate != null && !this.updatedate.isBlank()) {
+            try {
+                // 소수점 이하 초를 처리하기 위한 패턴으로 변경
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS]");
+                updatedDateTime = LocalDateTime.parse(this.updatedate, formatter);
+            } catch (Exception e) {
+                // 파싱 실패 시 예외 처리
+                System.err.println("updatedate 파싱 실패: " + this.updatedate + " - " + e.getMessage());
+                updatedDateTime = LocalDateTime.now();
+            }
+        } else {
+            updatedDateTime = LocalDateTime.now();
+        }
+
         return FestivalDetail.builder()
-                .festival(festival)
-                .fcltyid(mt10id)
-                .fname(prfnm)
-                .fdfrom(prfpdfrom)
-                .fdto(prfpdto)
+                .id(id)
+                .userId(this.userId != null ? this.userId : 0) // 외부 API로 불러오는 공연 소유자 기본 0
+                .fcltyid(fcltyid)
+                .fname(fname)
+                .fdfrom(DateUtil.parseDate(this.fdfrom))
+                .fdto(DateUtil.parseDate(this.fdto))
                 .fcltynm(fcltynm)
-                .fcast(prfcast)
-                .fcrew(prfcrew)
-                .fruntime(prfruntime)
-                .fage(prfage)
-                .entrpsnmP(entrpsnmP)
-                .entrpsnmA(entrpsnmA)
-                .entrpsnmH(entrpsnmH)
-                .entrpsnmS(entrpsnmS)
-                .ticketPrice(pcseguidance)
-                .poster(poster)
-                .story(sty)
+                .fcast(fcast)
+                .prfage(this.prfage)
+                .story(story)
+                .ticketPrice(finalTicketPrice)
+                .availableNOP(finalAvailableNOP)
                 .genrenm(genrenm)
-                .fstate(prfstate)
-                .openrun(openrun)
-                .visit(visit)
-                .child(child)
-                .isFestival(isFestival)
-                .musicallicense(musicallicense)
-                .musicalcreate(musicalcreate)
-                .updatedate(updatedate)
-                .styurls(styurls)
-//                여기서 이거 넣어주면 안되고,
+                .fstate(fstate)
+                .updatedate(updatedDateTime)
+                .faddress(faddress)
+                .ticketPick(safeTicketPick)
+                .maxPurchase(safeMaxPurchase)
+                .posterFile(posterFile)
+                .contentFile(contentFile != null ? contentFile : new ArrayList<>())
+                .views(0)
+                .entrpsnmH(entrpsnmH)
+                .runningTime(runningTime)
                 .build();
+    }
+
+    public static FestivalDetailDTO fromEntity(FestivalDetail entity) {
+        return FestivalDetailDTO.builder()
+                .id(entity.getId())
+                .userId(entity.getUserId())
+                .fcltyid(entity.getFcltyid())
+                .fname(entity.getFname())
+                .fdfrom(DateUtil.formatDate(entity.getFdfrom()))
+                .fdto(DateUtil.formatDate(entity.getFdto()))
+                .fcltynm(entity.getFcltynm())
+                .fcast(entity.getFcast())
+                .prfage(entity.getPrfage())
+                .story(entity.getStory())
+                .ticketPrice(entity.getTicketPrice())
+                .availableNOP(entity.getAvailableNOP())
+                .genrenm(entity.getGenrenm())
+                .fstate(entity.getFstate())
+                .updatedate(entity.getUpdatedate() != null ? entity.getUpdatedate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null)
+                .faddress(entity.getFaddress())
+                .ticketPick(entity.getTicketPick())
+                .maxPurchase(entity.getMaxPurchase())
+                .posterFile(entity.getPosterFile())
+                .contentFile(entity.getContentFile())
+                .entrpsnmH(entity.getEntrpsnmH())
+                .runningTime(entity.getRunningTime())
+                .build();
+    }
+
+    public String getUpdatedate() {
+        return updatedate;
+    }
+
+    public void setUpdatedate(String updatedate) {
+        this.updatedate = updatedate;
     }
 }

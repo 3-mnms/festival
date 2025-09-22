@@ -1,73 +1,139 @@
 package com.teckit.festival.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.teckit.festival.dto.FestivalKafkaDTO;
+import com.teckit.festival.enumeration.GeocodeStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "festival_detail")
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class FestivalDetail {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "fid")
+    @Id
+    @Column(length = 20)
+    private String id;  // 예: PF132236
+
+    @OneToOne(mappedBy = "festivalDetail", cascade = CascadeType.ALL)
+    @JsonBackReference
     private Festival festival;
+
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FestivalFavorite> favorites = new ArrayList<>();
+
+    @Column(nullable = false)
+    private Long userId;
 
     private String fcltyid;
     private String fname;
-    private String fdfrom;
-    private String fdto;
+    private LocalDate fdfrom;
+    private LocalDate fdto;
     private String fcltynm;
     private String fcast;
-    private String fcrew;
-    private String fruntime;
-    private String fage;
-    private String entrpsnmP;
-    private String entrpsnmA;
-    private String entrpsnmH;
-    private String entrpsnmS;
 
-    @Column(length=500)
-    private String ticketPrice;
-
-    @Column(length = 1000)
-    private String poster;
-
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String story;
 
+    private int ticketPrice;
     private String genrenm;
     private String fstate;
-    private String openrun;
-    private String visit;
-    private String child;
-    private String isFestival;
-
-//    수용 가능 인원
+    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime updatedate;
     private int availableNOP;
+    private int views;
+    private String faddress;
+    private int ticketPick;
+    private int maxPurchase;
+    private String prfage;
+    private String posterFile;
+    private String entrpsnmH;
+    private String runningTime;
 
-//    ------
-    private String musicallicense;
-    private String musicalcreate;
-//    -------
-    private String updatedate;
+    @Column(name = "latitude",  columnDefinition = "DECIMAL(10,7)")
+    private Double latitude; //위도
 
+    @Column(name = "longitude",  columnDefinition = "DECIMAL(10,7)")
+    private Double longitude;//경도
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private GeocodeStatus isGeocoded = GeocodeStatus.PENDING;//지오코드 여부(위도, 경도)
+
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<FestivalReview> festivalReviews = new ArrayList<>();
+
+    @OneToOne(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private FestivalReviewAnalyze festivalReviewAnalyze;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<NearbyFestival> nearbyFestivals = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Activity> activities = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Course> courses = new ArrayList<>();
+
+    @Builder.Default
     @ElementCollection
-    @CollectionTable(
-            name = "festival_detail_styurls",
-            joinColumns = @JoinColumn(name = "festival_detail_id") // ✅ 확실하게 FK 컬럼 생성
-    )
-    @Column(name="url")
-    private List<String> styurls;
+    private List<String> contentFile = new ArrayList<>();
 
-    @OneToMany(mappedBy = "festivalDetail",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<FestivalSchedule> schedules;
+    @Builder.Default
+    @OneToMany(mappedBy = "festivalDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FestivalSchedule> schedules = new ArrayList<>();
+
+    public void setSchedules(List<FestivalSchedule> schedules) {
+        this.schedules.clear();
+        if (schedules != null) {
+            for (FestivalSchedule s : schedules) {
+                s.setFestivalDetail(this);
+            }
+            this.schedules.addAll(schedules);
+        }
+    }
+
+    // Kafka 전송용 변환 메서드
+    public FestivalKafkaDTO toKafkaDTO() {
+        List<FestivalKafkaDTO.ScheduleDTO> scheduleList =
+                (this.schedules == null)
+                        ? new ArrayList<>()
+                        : this.schedules.stream()
+                        .map(s -> FestivalKafkaDTO.ScheduleDTO.builder()
+                                .dayOfWeek(s.getDayOfWeek().name())    // Enum → String
+                                .time(s.getTime())                     // "12:00"
+                                .build())
+                        .collect(Collectors.toList());
+
+        return FestivalKafkaDTO.builder()
+                .id(this.id)
+                .userId(this.userId)
+                .fname(this.fname)
+                .fdfrom(this.fdfrom)
+                .fdto(this.fdto)
+                .posterFile(this.posterFile)
+                .fcltynm(this.fcltynm)
+                .ticketPick(this.ticketPick)
+                .maxPurchase(this.maxPurchase)
+                .ticketPrice(this.ticketPrice)
+                .availableNOP(this.availableNOP)
+                .schedules(scheduleList)
+                .build();
+    }
 }

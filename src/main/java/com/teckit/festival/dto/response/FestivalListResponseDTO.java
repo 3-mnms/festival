@@ -1,0 +1,33 @@
+// 홈페이지 내 공연 리스트 조회용 응답 DTO
+package com.teckit.festival.dto.response;
+
+import com.teckit.festival.entity.Festival;
+import lombok.*;
+
+import java.time.LocalDate;
+
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class FestivalListResponseDTO {
+    private String fid;
+    private String prfnm;
+    private LocalDate prfpdfrom;
+    private LocalDate prfpdto;
+    private String poster;
+    private String fcltynm;
+    private String genrenm;
+
+    public static FestivalListResponseDTO fromEntity(Festival festival) {
+        return FestivalListResponseDTO.builder()
+                .fid(festival.getFestivalDetail() != null ? festival.getFestivalDetail().getId() : null)
+                .prfnm(festival.getFname())
+                .prfpdfrom(festival.getFdfrom())
+                .prfpdto(festival.getFdto())
+                .poster(festival.getPosterFile())
+                .fcltynm(festival.getFcltynm())
+                .genrenm(festival.getGenrenm())
+                .build();
+    }
+}

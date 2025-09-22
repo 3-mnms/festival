@@ -1,0 +1,42 @@
+package com.teckit.festival.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    private final HeaderAuthenticationFilter headerAuthFilter;
+
+    public SecurityConfig(HeaderAuthenticationFilter headerAuthFilter) {
+        this.headerAuthFilter = headerAuthFilter;
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/festival/review/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/festival/chat").permitAll()
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/festival/manage/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/festival/manage/**").authenticated()
+                        .requestMatchers(HttpMethod.POST,   "/api/festival/review/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,  "/api/festival/review/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/festival/review/**").authenticated()
+                        .anyRequest().permitAll()
+                )
+                .addFilterBefore(headerAuthFilter, AuthorizationFilter.class)
+                .build();
+    }
+}

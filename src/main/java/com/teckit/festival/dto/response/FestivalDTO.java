@@ -1,48 +1,42 @@
 package com.teckit.festival.dto.response;
 
 import com.teckit.festival.entity.Festival;
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import lombok.Getter;
+import lombok.*;
 
-@XmlAccessorType(XmlAccessType.FIELD)
+import java.time.LocalDate;
+
 @Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FestivalDTO {
-//    공연 id
-    @XmlElement private String mt20id;
-//    공연명
-    @XmlElement private String prfnm;
-//    공연 시작일
-    @XmlElement private String prfpdfrom;
-//    공연 종료일
-    @XmlElement private String prfpdto;
-//    공연 시설명
-    @XmlElement private String fcltynm;
-//    포스터 이미지 경로
-    @XmlElement private String poster;
-//    공연지역
-    @XmlElement private String area;
-//    공연 장르명
-    @XmlElement private String genrenm;
-//    오픈런
-    @XmlElement private String openrun;
-//    공연 상태
-    @XmlElement
-    private String prfstate;
+    private String mt20id;       // FestivalDetail.id
+    private String prfnm;        // 공연명
+    private LocalDate prfpdfrom;    // 시작일
+    private LocalDate prfpdto;      // 종료일
+    private String fcltynm;      // 장소명
+    private String poster;       // 썸네일
+    private String genrenm;      // 장르
+    private String prfstate;     // 상태
+    private String prfage;       // 관람 연령
+    private int ticketPick;      // 티켓 방식
+    private int maxPurchase;     // 1인 최대 구매 수량
+    private int ticketPrice;     // 티켓 가격
 
-    public Festival toEntity() {
-        return Festival.builder()
-                .id(mt20id)
-                .fname(prfnm)
-                .fdfrom(prfpdfrom)
-                .fdto(prfpdto)
-                .poster(poster)
-                .area(area)
-                .fcltynm(fcltynm)
-                .genrename(genrenm)
-                .openrun(openrun)
-                .fstate(prfstate)
+    public static FestivalDTO fromEntity(Festival festival) {
+        return FestivalDTO.builder()
+                .mt20id(festival.getFestivalDetail().getId())
+                .prfnm(festival.getFname())
+                .prfpdfrom(festival.getFdfrom())
+                .prfpdto(festival.getFdto())
+                .fcltynm(festival.getFcltynm())
+                .poster(festival.getPosterFile())
+                .genrenm(festival.getGenrenm())
+                .prfstate(festival.getFstate())
+                .prfage(festival.getPrfage())
+                .ticketPick(festival.getFestivalDetail().getTicketPick())
+                .maxPurchase(festival.getFestivalDetail().getMaxPurchase())
+                .ticketPrice(festival.getFestivalDetail().getTicketPrice())
                 .build();
     }
 }
